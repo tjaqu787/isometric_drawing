@@ -16,7 +16,7 @@ class _IsometricViewState extends State<IsometricView> {
   @override
   void initState() {
     super.initState();
-    state = IsometricState(); // Initialize the state here
+    state = IsometricState();
   }
 
   @override

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 
-// Define our own enum for 3D axes
 enum ViewAxis {
-  front, // YZ plane (looking from X)
-  side, // XZ plane (looking from Y)
-  top, // XY plane (looking from Z)
+  front,
+  side,
+  top,
 }
 
 class Point3D {
