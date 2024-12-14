@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import './isometric_state.dart';
 
-// single_axis_painter.dart
 class SingleAxisPainter extends CustomPainter {
   final IsometricState state;
   final ViewAxis axis;
@@ -12,6 +11,9 @@ class SingleAxisPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Translate canvas to center of the view
+    canvas.translate(size.width / 2, size.height / 2);
+
     final paint = Paint()
       ..color = Colors.blue
       ..strokeWidth = 2.0
@@ -25,15 +27,23 @@ class SingleAxisPainter extends CustomPainter {
   void _drawGrid(Canvas canvas, Size size, Paint paint) {
     paint.color = Colors.grey.withOpacity(0.3);
 
-    // Draw basic 2D grid based on axis
-    for (double i = 0; i < max(size.width, size.height); i += scale) {
-      canvas.drawLine(Offset(0, i), Offset(size.width, i), paint);
-      canvas.drawLine(Offset(i, 0), Offset(i, size.height), paint);
+    final halfWidth = size.width / 2;
+    final halfHeight = size.height / 2;
+
+    // Draw horizontal lines
+    for (double i = -halfHeight; i <= halfHeight; i += scale) {
+      canvas.drawLine(Offset(-halfWidth, i), Offset(halfWidth, i), paint);
+    }
+
+    // Draw vertical lines
+    for (double i = -halfWidth; i <= halfWidth; i += scale) {
+      canvas.drawLine(Offset(i, -halfHeight), Offset(i, halfHeight), paint);
     }
   }
 
   void _drawPoints(Canvas canvas, Paint paint) {
     paint.color = Colors.red;
+    paint.style = PaintingStyle.fill;
 
     for (var point in state.points) {
       final projected = _projectPoint(point);
@@ -42,6 +52,8 @@ class SingleAxisPainter extends CustomPainter {
   }
 
   void _drawLines(Canvas canvas, Paint paint) {
+    paint.style = PaintingStyle.stroke;
+
     for (var line in state.lines) {
       paint.color = line.isPreview ? Colors.grey : Colors.blue;
       final start = _projectPoint(line.start);
@@ -54,14 +66,15 @@ class SingleAxisPainter extends CustomPainter {
     // Project 3D point to 2D based on axis
     switch (axis) {
       case ViewAxis.front:
-        return Offset(point.y, point.z) * scale;
+        return Offset(point.y * scale, -point.z * scale);
       case ViewAxis.side:
-        return Offset(point.x, point.z) * scale;
+        return Offset(point.x * scale, -point.z * scale);
       case ViewAxis.top:
-        return Offset(point.x, point.y) * scale;
+        return Offset(point.x * scale, point.y * scale);
     }
   }
 
   @override
-  bool shouldRepaint(SingleAxisPainter oldDelegate) => true;
+  bool shouldRepaint(SingleAxisPainter oldDelegate) =>
+      oldDelegate.state != state || oldDelegate.axis != axis;
 }
