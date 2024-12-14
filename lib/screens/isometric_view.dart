@@ -22,14 +22,44 @@ class _IsometricViewState extends State<IsometricView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GridView.count(
-        crossAxisCount: 2,
-        children: [
-          IsometricWindow(state: state, axis: ViewAxis.front),
-          IsometricWindow(state: state, axis: ViewAxis.side),
-          IsometricWindow(state: state, axis: ViewAxis.top),
-          QuickSettingsWindow(state: state),
-        ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final cellWidth = constraints.maxWidth / 2;
+          final cellHeight = constraints.maxHeight / 2;
+
+          return Column(
+            children: [
+              Row(
+                children: [
+                  SizedBox(
+                    width: cellWidth,
+                    height: cellHeight,
+                    child: IsometricWindow(state: state, axis: ViewAxis.front),
+                  ),
+                  SizedBox(
+                    width: cellWidth,
+                    height: cellHeight,
+                    child: IsometricWindow(state: state, axis: ViewAxis.side),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  SizedBox(
+                    width: cellWidth,
+                    height: cellHeight,
+                    child: IsometricWindow(state: state, axis: ViewAxis.top),
+                  ),
+                  SizedBox(
+                    width: cellWidth,
+                    height: cellHeight,
+                    child: QuickSettingsWindow(state: state),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
