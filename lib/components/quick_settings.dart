@@ -23,8 +23,7 @@ class _QuickSettingsWindowState extends State<QuickSettingsWindow>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    // Store initial state in undo history
+    _tabController = TabController(length: 4, vsync: this); // Updated to 4 tabs
     _saveState();
   }
 
@@ -35,22 +34,19 @@ class _QuickSettingsWindowState extends State<QuickSettingsWindow>
   }
 
   void _saveState() {
+    // Update this based on your actual state structure
     undoHistory.add({
-      'points': List.from(widget.state.points),
-      'lines': List.from(widget.state.lines),
+      'currentState':
+          widget.state.getCurrentState(), // Assuming you have this method
     });
   }
 
   void _undo() {
     if (undoHistory.length > 1) {
-      // Remove current state
       undoHistory.removeLast();
-      // Get previous state
       final previousState = undoHistory.last;
-
-      widget.state.points = List.from(previousState['points']);
-      widget.state.lines = List.from(previousState['lines']);
-      widget.state.notifyListeners();
+      widget.state.restoreState(
+          previousState['currentState']); // Assuming you have this method
     }
   }
 
@@ -66,12 +62,14 @@ class _QuickSettingsWindowState extends State<QuickSettingsWindow>
               controller: _tabController,
               tabs: const [
                 Tab(text: 'Measurements'),
-                Tab(text: 'Quick Settings'),
+                Tab(text: 'Settings'),
+                Tab(text: 'Add'),
+                Tab(text: 'Quick Add'),
               ],
             ),
             const SizedBox(height: 16),
             SizedBox(
-              height: 300, // Adjust height as needed
+              height: 300,
               child: TabBarView(
                 controller: _tabController,
                 children: [
@@ -83,7 +81,7 @@ class _QuickSettingsWindowState extends State<QuickSettingsWindow>
                       return ListTile(
                         title: Text('Line ${index + 1}'),
                         subtitle:
-                            Text('Length: ${line.length.toStringAsFixed(2)}'),
+                            Text('Length: ${line.length!.toStringAsFixed(2)}'),
                       );
                     },
                   ),
@@ -127,9 +125,8 @@ class _QuickSettingsWindowState extends State<QuickSettingsWindow>
                         children: [
                           ElevatedButton(
                             onPressed: () {
-                              widget.state.points.clear();
-                              widget.state.lines.clear();
-                              widget.state.notifyListeners();
+                              widget.state
+                                  .clearAll(); // Assuming you have this method
                               _saveState();
                             },
                             child: const Text('Clear All'),
@@ -137,6 +134,46 @@ class _QuickSettingsWindowState extends State<QuickSettingsWindow>
                           ElevatedButton(
                             onPressed: undoHistory.length > 1 ? _undo : null,
                             child: const Text('Undo'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  // Add Tab (existing)
+                  const Center(
+                    child: Text('Add Tab Content'),
+                  ),
+
+                  // Quick Add Tab (new)
+                  Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {
+                              widget.state
+                                  .addBoxOffset(); // Implement this method
+                              _saveState();
+                            },
+                            child: const Text('Box Offset'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              widget.state.addOffset(); // Implement this method
+                              _saveState();
+                            },
+                            child: const Text('Offset'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              widget.state
+                                  .add90Degree(); // Implement this method
+                              _saveState();
+                            },
+                            child: const Text('90°'),
                           ),
                         ],
                       ),
