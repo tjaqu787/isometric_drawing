@@ -18,12 +18,13 @@ class _QuickSettingsWindowState extends State<QuickSettingsWindow>
   late TabController _tabController;
   String selectedPipeSize = '1/2"';
   String selectedAngle = '45';
+  double selectedBoxOffset = .5;
   List<Map<String, dynamic>> undoHistory = [];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this); // Updated to 4 tabs
+    _tabController = TabController(length: 3, vsync: this); // Updated to 4 tabs
     _saveState();
   }
 
@@ -64,7 +65,6 @@ class _QuickSettingsWindowState extends State<QuickSettingsWindow>
                 Tab(text: 'Measurements'),
                 Tab(text: 'Settings'),
                 Tab(text: 'Add'),
-                Tab(text: 'Quick Add'),
               ],
             ),
             const SizedBox(height: 16),
@@ -80,18 +80,29 @@ class _QuickSettingsWindowState extends State<QuickSettingsWindow>
                       final line = widget.state.lines[index];
                       return ListTile(
                         title: Text('Line ${index + 1}'),
-                        subtitle:
-                            Text('Length: ${line.length!.toStringAsFixed(2)}'),
+                        subtitle: Text(
+                          // Handle null case with null-aware operator and provide default value
+                          'Length: ${line.length?.toStringAsFixed(2) ?? 'N/A'}',
+                        ),
                       );
                     },
                   ),
 
                   // Quick Settings Tab
                   Column(
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const Text(
+                        'Conduit Size:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
                       DropdownButton<String>(
                         value: selectedPipeSize,
+                        hint: const Text('Select conduit size'),
                         items: ['1/2"', '3/4"', '1"'].map((size) {
                           return DropdownMenuItem(
                             value: size,
@@ -104,9 +115,18 @@ class _QuickSettingsWindowState extends State<QuickSettingsWindow>
                           });
                         },
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Default Angle:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
                       DropdownButton<String>(
                         value: selectedAngle,
+                        hint: const Text('Default angle'),
                         items: ['10', '22', '30', '45', '60'].map((angle) {
                           return DropdownMenuItem(
                             value: angle,
@@ -119,30 +139,83 @@ class _QuickSettingsWindowState extends State<QuickSettingsWindow>
                           });
                         },
                       ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              widget.state
-                                  .clearAll(); // Assuming you have this method
-                              _saveState();
-                            },
-                            child: const Text('Clear All'),
-                          ),
-                          ElevatedButton(
-                            onPressed: undoHistory.length > 1 ? _undo : null,
-                            child: const Text('Undo'),
-                          ),
-                        ],
+                      const Text(
+                        'Box Offset:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ],
-                  ),
+                      const SizedBox(height: 4),
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'Box Offset',
+                          hintText: 'Enter fraction (1/2) or decimal (0.5)',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.text,
+                        onChanged: (value) {
+                          if (value.isEmpty) return;
 
-                  // Add Tab (existing)
-                  const Center(
-                    child: Text('Add Tab Content'),
+                          // Handle fraction input
+                          if (value.contains('/')) {
+                            try {
+                              final parts = value.split('/');
+                              if (parts.length == 2) {
+                                final numerator = double.parse(parts[0]);
+                                final denominator = double.parse(parts[1]);
+                                final decimalValue = numerator / denominator;
+                                setState(() {
+                                  selectedBoxOffset = decimalValue;
+                                });
+                              }
+                            } catch (e) {
+                              // Handle invalid fraction input
+                              print('Invalid fraction format');
+                            }
+                          }
+                          // Handle decimal input
+                          else {
+                            try {
+                              final decimalValue = double.parse(value);
+                              setState(() {
+                                selectedBoxOffset = decimalValue;
+                              });
+                            } catch (e) {
+                              // Handle invalid decimal input
+                              print('Invalid decimal format');
+                            }
+                          }
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a value';
+                          }
+
+                          // Validate fraction format
+                          if (value.contains('/')) {
+                            final parts = value.split('/');
+                            if (parts.length != 2)
+                              return 'Invalid fraction format';
+                            try {
+                              double.parse(parts[0]);
+                              double.parse(parts[1]);
+                            } catch (e) {
+                              return 'Invalid fraction numbers';
+                            }
+                            return null;
+                          }
+
+                          // Validate decimal format
+                          try {
+                            double.parse(value);
+                            return null;
+                          } catch (e) {
+                            return 'Invalid number format';
+                          }
+                        },
+                      )
+                    ],
                   ),
 
                   // Quick Add Tab (new)
@@ -154,23 +227,21 @@ class _QuickSettingsWindowState extends State<QuickSettingsWindow>
                         children: [
                           ElevatedButton(
                             onPressed: () {
-                              widget.state
-                                  .addBoxOffset(); // Implement this method
+                              widget.state.addBoxOffset();
                               _saveState();
                             },
                             child: const Text('Box Offset'),
                           ),
                           ElevatedButton(
                             onPressed: () {
-                              widget.state.addOffset(); // Implement this method
+                              widget.state.addOffset();
                               _saveState();
                             },
                             child: const Text('Offset'),
                           ),
                           ElevatedButton(
                             onPressed: () {
-                              widget.state
-                                  .add90Degree(); // Implement this method
+                              widget.state.add90Degree();
                               _saveState();
                             },
                             child: const Text('90°'),
