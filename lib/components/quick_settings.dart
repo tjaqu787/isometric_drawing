@@ -7,6 +7,7 @@ class MeasurementsTab extends StatelessWidget {
   final Function() onAddOffset;
   final Function() onAdd90Degree;
   final Function() onSave;
+  final Function(int, double)? onUpdateMeasurement;
 
   const MeasurementsTab({
     super.key,
@@ -15,6 +16,7 @@ class MeasurementsTab extends StatelessWidget {
     required this.onAddOffset,
     required this.onAdd90Degree,
     required this.onSave,
+    this.onUpdateMeasurement,
   });
 
   @override
@@ -48,20 +50,33 @@ class MeasurementsTab extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 16), // Add spacing between buttons and list
+        const Divider(),
         Expanded(
-          // Wrap ListView with Expanded
-          child: ListView.builder(
-            itemCount: lines.length,
-            itemBuilder: (context, index) {
-              final line = lines[index];
-              return ListTile(
-                title: Text('Line ${index + 1}'),
-                subtitle: Text(
-                  'Length: ${line.length?.toStringAsFixed(2) ?? 'N/A'}',
-                ),
-              );
-            },
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(4),
+            ),
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            child: ListView.separated(
+              padding: const EdgeInsets.all(8),
+              itemCount: lines.length,
+              separatorBuilder: (context, index) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final line = lines[index];
+                return ListTile(
+                  dense: true,
+                  title: Text(
+                    'Line ${index + 1}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    'Length: ${line.length?.toStringAsFixed(2) ?? 'N/A'}',
+                    style: const TextStyle(color: Colors.blue),
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ],
@@ -247,10 +262,10 @@ class QuickSettingsWindow extends StatefulWidget {
   });
 
   @override
-  State<QuickSettingsWindow> createState() => _QuickSettingsWindowState();
+  State<QuickSettingsWindow> createState() => QuickSettingsWindowState();
 }
 
-class _QuickSettingsWindowState extends State<QuickSettingsWindow>
+class QuickSettingsWindowState extends State<QuickSettingsWindow>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String selectedPipeSize = '1/2"';
@@ -312,10 +327,23 @@ class _QuickSettingsWindowState extends State<QuickSettingsWindow>
                 children: [
                   MeasurementsTab(
                     lines: widget.state.lines,
-                    onAddBoxOffset: widget.state.addBoxOffset,
-                    onAddOffset: widget.state.addOffset,
-                    onAdd90Degree: widget.state.add90Degree,
+                    onAddBoxOffset: () {
+                      widget.state.addBoxOffset();
+                      _saveState();
+                    },
+                    onAddOffset: () {
+                      widget.state.addOffset();
+                      _saveState();
+                    },
+                    onAdd90Degree: () {
+                      widget.state.add90Degree();
+                      _saveState();
+                    },
                     onSave: _saveState,
+                    onUpdateMeasurement: (index, newLength) {
+                      widget.state.updateLineMeasurement(index, newLength);
+                      _saveState();
+                    },
                   ),
                   SettingsTab(
                     selectedPipeSize: selectedPipeSize,

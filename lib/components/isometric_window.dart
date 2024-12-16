@@ -20,11 +20,14 @@ class IsometricWindow extends StatelessWidget {
         return LayoutBuilder(
           builder: (context, constraints) {
             return GestureDetector(
-              onPanDown: (details) => _handlePanDown(details, context),
-              onPanUpdate: (details) => _handlePanUpdate(details, context),
-              onPanEnd: (details) => _handlePanEnd(context),
+              onPanStart: (details) => _handleRotationStart(details, context),
+              onPanUpdate: (details) => _handleRotationUpdate(details, context),
               child: CustomPaint(
-                painter: SingleAxisPainter(state, axis),
+                painter: SingleAxisPainter(
+                  state,
+                  axis,
+                  selectedLine: state.selectedLine,
+                ),
                 size: Size(constraints.maxWidth, constraints.maxHeight),
               ),
             );
@@ -34,54 +37,39 @@ class IsometricWindow extends StatelessWidget {
     );
   }
 
-  void _handlePanDown(DragDownDetails details, BuildContext context) {
+  void _handleRotationStart(DragStartDetails details, BuildContext context) {
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
     final size = renderBox.size;
     final center = Offset(size.width / 2, size.height / 2);
     final localPosition = details.localPosition - center;
 
-    final point = _convertToPoint3D(localPosition);
-    state.startPoint = point;
-    state.addPoint(point);
+    // Find the closest line to start rotating
+    state.selectLineNearPoint(localPosition, axis);
   }
 
-  void _handlePanUpdate(DragUpdateDetails details, BuildContext context) {
-    if (state.startPoint != null) {
-      final RenderBox renderBox = context.findRenderObject() as RenderBox;
-      final size = renderBox.size;
-      final center = Offset(size.width / 2, size.height / 2);
-      final localPosition = details.localPosition - center;
+  void _handleRotationUpdate(DragUpdateDetails details, BuildContext context) {
+    if (state.selectedLine == null) return;
 
-      final endPoint = _convertToPoint3D(localPosition);
-      state.updatePreviewLine(
-          IsometricLine3D(state.startPoint!, endPoint, true));
-    }
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final size = renderBox.size;
+    final center = Offset(size.width / 2, size.height / 2);
+    final localPosition = details.localPosition - center;
+
+    // Calculate rotation based on drag position
+    final angle = _calculateRotationAngle(localPosition);
+    state.updateSelectedLineAngle(angle);
   }
 
-  void _handlePanEnd(BuildContext context) {
-    if (state.startPoint != null) {
-      state.commitPreviewLine();
-      state.startPoint = null;
-    }
-  }
-
-  Point3D _convertToPoint3D(Offset position) {
-    // Convert to grid coordinates
-    final gridX = position.dx / SingleAxisPainter.scale;
-    final gridY = position.dy / SingleAxisPainter.scale;
-
-    // Round to nearest grid point
-    final roundedX = (gridX).round().toDouble();
-    final roundedY = (gridY).round().toDouble();
-
-    // Convert 2D position to 3D based on axis
+  double _calculateRotationAngle(Offset position) {
+    // Calculate angle based on current axis and position
     switch (axis) {
       case ViewAxis.front:
-        return Point3D(0, roundedX, -roundedY);
+        return -((position.dy / SingleAxisPainter.scale) *
+            5); // Adjust sensitivity
       case ViewAxis.side:
-        return Point3D(roundedX, 0, -roundedY);
+        return -((position.dy / SingleAxisPainter.scale) * 5);
       case ViewAxis.top:
-        return Point3D(roundedX, roundedY, 0);
+        return ((position.dx / SingleAxisPainter.scale) * 5);
     }
   }
 }
