@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import './isometric_state.dart';
 
-// Measurements Tab Component
 class MeasurementsTab extends StatelessWidget {
   final List<IsometricLine3D> lines;
   final Function() onAddBoxOffset;
@@ -9,56 +8,64 @@ class MeasurementsTab extends StatelessWidget {
   final Function() onAdd90Degree;
   final Function() onSave;
 
-  const MeasurementsTab(
-      {super.key,
-      required this.lines,
-      required this.onAddBoxOffset,
-      required this.onAddOffset,
-      required this.onAdd90Degree,
-      required this.onSave});
+  const MeasurementsTab({
+    super.key,
+    required this.lines,
+    required this.onAddBoxOffset,
+    required this.onAddOffset,
+    required this.onAdd90Degree,
+    required this.onSave,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          ElevatedButton(
-            onPressed: () {
-              onAddBoxOffset();
-              onSave();
-            },
-            child: const Text('Box Offset'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              onAddOffset();
-              onSave();
-            },
-            child: const Text('Offset'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              onAdd90Degree();
-              onSave();
-            },
-            child: const Text('90°'),
-          ),
-        ],
-      ),
-      ListView.builder(
-        itemCount: lines.length,
-        itemBuilder: (context, index) {
-          final line = lines[index];
-          return ListTile(
-            title: Text('Line ${index + 1}'),
-            subtitle: Text(
-              'Length: ${line.length?.toStringAsFixed(2) ?? 'N/A'}',
+    return Column(
+      children: [
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                onAddBoxOffset();
+                onSave();
+              },
+              child: const Text('Box Offset'),
             ),
-          );
-        },
-      )
-    ]);
+            ElevatedButton(
+              onPressed: () {
+                onAddOffset();
+                onSave();
+              },
+              child: const Text('Offset'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                onAdd90Degree();
+                onSave();
+              },
+              child: const Text('90°'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16), // Add spacing between buttons and list
+        Expanded(
+          // Wrap ListView with Expanded
+          child: ListView.builder(
+            itemCount: lines.length,
+            itemBuilder: (context, index) {
+              final line = lines[index];
+              return ListTile(
+                title: Text('Line ${index + 1}'),
+                subtitle: Text(
+                  'Length: ${line.length?.toStringAsFixed(2) ?? 'N/A'}',
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -120,18 +127,20 @@ class SettingsTab extends StatelessWidget {
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             title,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 4),
-          child,
+          const SizedBox(width: 5),
+          Expanded(
+            child: child,
+          ),
         ],
       ),
     );

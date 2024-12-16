@@ -11,7 +11,7 @@ class Point3D {
   final double x;
   final double y;
   final double z;
-  double? angle; // Nullable angle property
+  double? angle;
 
   Point3D(this.x, this.y, this.z, [this.angle]);
 
@@ -37,7 +37,7 @@ class IsometricLine3D {
   final Point3D start;
   final Point3D end;
   final bool isPreview;
-  double? length; // Nullable length property
+  double? length;
 
   IsometricLine3D(this.start, this.end, this.isPreview, [this.length]);
 
