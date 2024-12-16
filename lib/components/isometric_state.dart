@@ -190,8 +190,7 @@ class IsometricState extends ChangeNotifier {
     points.addAll([point1, point2, point3]);
 
     // Add lines with symbolic measurements
-    lines.add(IsometricLine3D(lastPoint, point1, false,
-        1.0)); // Length can be modified from measurements
+    lines.add(IsometricLine3D(lastPoint, point1, false, 1.0));
     lines.add(IsometricLine3D(point1, point2, false, 1.0));
     lines.add(IsometricLine3D(point2, point3, false, 1.0));
 
@@ -201,13 +200,18 @@ class IsometricState extends ChangeNotifier {
   void addOffset() {
     final lastPoint = points.isEmpty ? startingPoint : points.last;
 
-    // Create symbolic offset
-    final point1 = Point3D(lastPoint.x + 1, lastPoint.y + 1, lastPoint.z);
-    points.add(point1);
+    // Create symbolic box shape
+    final point1 = Point3D(lastPoint.x + 1, lastPoint.y, lastPoint.z);
+    final point2 = Point3D(lastPoint.x + 1, lastPoint.y + 1, lastPoint.z);
+    final point3 = Point3D(lastPoint.x + 2, lastPoint.y + 1, lastPoint.z);
 
-    // Add line with symbolic measurement
-    lines.add(IsometricLine3D(
-        lastPoint, point1, false, 1.4)); // Approximate length for display
+    // Add points
+    points.addAll([point1, point2, point3]);
+
+    // Add lines with symbolic measurements
+    lines.add(IsometricLine3D(lastPoint, point1, false, 1.0));
+    lines.add(IsometricLine3D(point1, point2, false, 1.0));
+    lines.add(IsometricLine3D(point2, point3, false, 1.0));
 
     notifyListeners();
   }
@@ -215,12 +219,16 @@ class IsometricState extends ChangeNotifier {
   void add90Degree() {
     final lastPoint = points.isEmpty ? startingPoint : points.last;
 
-    // Create 90-degree bend
-    final point1 = Point3D(lastPoint.x, lastPoint.y + 1, lastPoint.z);
-    points.add(point1);
+    // Create symbolic box shape
+    final point1 = Point3D(lastPoint.x + 1, lastPoint.y, lastPoint.z);
+    final point2 = Point3D(lastPoint.x + 1, lastPoint.y + 1, lastPoint.z);
 
-    // Add line with symbolic measurement and 90-degree angle
+    // Add points
+    points.addAll([point1, point2]);
+
+    // Add lines with symbolic measurements
     lines.add(IsometricLine3D(lastPoint, point1, false, 1.0));
+    lines.add(IsometricLine3D(point1, point2, false, 1.0));
 
     notifyListeners();
   }

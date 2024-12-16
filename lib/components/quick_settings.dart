@@ -91,6 +91,11 @@ class SettingsTab extends StatelessWidget {
   final Function(double) onBoxOffsetChanged;
   final String selectedPipeSize;
   final String selectedAngle;
+  final VoidCallback onUndo;
+  final VoidCallback onClear;
+  final VoidCallback onSend;
+  final Function(String) onIndexChanged;
+  final String selectedIndex;
 
   const SettingsTab({
     super.key,
@@ -99,6 +104,11 @@ class SettingsTab extends StatelessWidget {
     required this.onBoxOffsetChanged,
     required this.selectedPipeSize,
     required this.selectedAngle,
+    required this.onUndo,
+    required this.onClear,
+    required this.onSend,
+    required this.onIndexChanged,
+    required this.selectedIndex,
   });
 
   @override
@@ -106,31 +116,95 @@ class SettingsTab extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSettingSection(
-          title: 'Conduit Size:',
-          child: DropdownButton<String>(
-            value: selectedPipeSize,
-            hint: const Text('Select conduit size'),
-            items: ['1/2"', '3/4"', '1"'].map((size) {
-              return DropdownMenuItem(value: size, child: Text(size));
-            }).toList(),
-            onChanged: (value) => onPipeSizeChanged(value!),
+        // Top buttons row
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: onUndo,
+                child: const Text('Undo'),
+              ),
+              ElevatedButton(
+                onPressed: onClear,
+                child: const Text('Clear'),
+              ),
+              ElevatedButton(
+                onPressed: onSend,
+                child: const Text('Send'),
+              ),
+            ],
           ),
         ),
-        _buildSettingSection(
-          title: 'Default Angle:',
-          child: DropdownButton<String>(
-            value: selectedAngle,
-            hint: const Text('Default angle'),
-            items: ['10', '22', '30', '45', '60'].map((angle) {
-              return DropdownMenuItem(value: angle, child: Text('$angle°'));
-            }).toList(),
-            onChanged: (value) => onAngleChanged(value!),
+        const Divider(),
+        // Two-column layout for settings
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Left column
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildSettingSection(
+                      title: 'Conduit Size:',
+                      child: DropdownButton<String>(
+                        value: selectedPipeSize,
+                        hint: const Text('Select size'),
+                        isExpanded: true,
+                        items: ['1/2"', '3/4"', '1"'].map((size) {
+                          return DropdownMenuItem(
+                              value: size, child: Text(size));
+                        }).toList(),
+                        onChanged: (value) => onPipeSizeChanged(value!),
+                      ),
+                    ),
+                    _buildSettingSection(
+                      title: 'Index:',
+                      child: DropdownButton<String>(
+                        value: selectedIndex,
+                        hint: const Text('Select index'),
+                        isExpanded: true,
+                        items: ['1', '2', '3', '4', '5'].map((index) {
+                          return DropdownMenuItem(
+                              value: index, child: Text(index));
+                        }).toList(),
+                        onChanged: (value) => onIndexChanged(value!),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Right column
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildSettingSection(
+                      title: 'Angle:',
+                      child: DropdownButton<String>(
+                        value: selectedAngle,
+                        hint: const Text('Select angle'),
+                        isExpanded: true,
+                        items: ['10', '22', '30', '45', '60'].map((angle) {
+                          return DropdownMenuItem(
+                            value: angle,
+                            child: Text('$angle°'),
+                          );
+                        }).toList(),
+                        onChanged: (value) => onAngleChanged(value!),
+                      ),
+                    ),
+                    _buildSettingSection(
+                      title: 'Box Offset:',
+                      child: BoxOffsetInput(onChanged: onBoxOffsetChanged),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ),
-        _buildSettingSection(
-          title: 'Box Offset:',
-          child: BoxOffsetInput(onChanged: onBoxOffsetChanged),
         ),
       ],
     );
@@ -141,9 +215,9 @@ class SettingsTab extends StatelessWidget {
     required Widget child,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 2.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
@@ -152,8 +226,9 @@ class SettingsTab extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(width: 5),
-          Expanded(
+          const SizedBox(height: 2),
+          SizedBox(
+            width: double.infinity,
             child: child,
           ),
         ],
@@ -271,6 +346,7 @@ class QuickSettingsWindowState extends State<QuickSettingsWindow>
   String selectedPipeSize = '1/2"';
   String selectedAngle = '45';
   double selectedBoxOffset = 0.5;
+  String selectedIndex = '1';
   final List<Map<String, dynamic>> undoHistory = [];
 
   @override
@@ -348,13 +424,23 @@ class QuickSettingsWindowState extends State<QuickSettingsWindow>
                   SettingsTab(
                     selectedPipeSize: selectedPipeSize,
                     selectedAngle: selectedAngle,
+                    selectedIndex: selectedIndex,
                     onPipeSizeChanged: (value) =>
                         setState(() => selectedPipeSize = value),
                     onAngleChanged: (value) =>
                         setState(() => selectedAngle = value),
                     onBoxOffsetChanged: (value) =>
                         setState(() => selectedBoxOffset = value),
-                  ),
+                    onIndexChanged: (value) =>
+                        setState(() => selectedIndex = value),
+                    onUndo: _undo,
+                    onClear: () => widget.state.clearAll(),
+                    onSend: () {
+                      debugPrint('Sending data...');
+                      debugPrint('Pipe Size: $selectedPipeSize');
+                      debugPrint('Bend Angle: $selectedAngle°');
+                    },
+                  )
                 ],
               ),
             ),
