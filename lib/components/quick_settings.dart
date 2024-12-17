@@ -2,85 +2,140 @@ import 'package:flutter/material.dart';
 import './isometric_state.dart';
 
 class MeasurementsTab extends StatelessWidget {
-  final List<IsometricLine3D> lines;
+  final List<Bend> bends;
   final Function() onAddBoxOffset;
   final Function() onAddOffset;
   final Function() onAdd90Degree;
   final Function() onSave;
-  final Function(int, double)? onUpdateMeasurement;
+  final Function(int, Map<String, double>)? onUpdateBend;
 
   const MeasurementsTab({
     super.key,
-    required this.lines,
+    required this.bends,
     required this.onAddBoxOffset,
     required this.onAddOffset,
     required this.onAdd90Degree,
     required this.onSave,
-    this.onUpdateMeasurement,
+    this.onUpdateBend,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                onAddBoxOffset();
-                onSave();
-              },
-              child: const Text('Box Offset'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                onAddOffset();
-                onSave();
-              },
-              child: const Text('Offset'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                onAdd90Degree();
-                onSave();
-              },
-              child: const Text('90°'),
-            ),
-          ],
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  onAddBoxOffset();
+                  onSave();
+                },
+                child: const Text('Box Offset'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  onAddOffset();
+                  onSave();
+                },
+                child: const Text('Offset'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  onAdd90Degree();
+                  onSave();
+                },
+                child: const Text('90°'),
+              ),
+            ],
+          ),
         ),
         const Divider(),
         Expanded(
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(4),
-            ),
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-            child: ListView.separated(
-              padding: const EdgeInsets.all(8),
-              itemCount: lines.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final line = lines[index];
-                return ListTile(
-                  dense: true,
-                  title: Text(
-                    'Line ${index + 1}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+          child: ListView.builder(
+            itemCount: bends.length,
+            itemBuilder: (context, index) {
+              final bend = bends[index];
+              return Card(
+                margin: const EdgeInsets.all(8),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Bend ${index + 1} (${_getBendTypeName(bend.type)})',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildNumberField(
+                              'Distance',
+                              bend.distance,
+                              (value) =>
+                                  _updateBendProperty(index, 'distance', value),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildNumberField(
+                              'Inclination',
+                              bend.inclination,
+                              (value) => _updateBendProperty(
+                                  index, 'inclination', value),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  subtitle: Text(
-                    'Length: ${line.length?.toStringAsFixed(2) ?? 'N/A'}',
-                    style: const TextStyle(color: Colors.blue),
-                  ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
         ),
       ],
     );
+  }
+
+  String _getBendTypeName(BendType type) {
+    switch (type) {
+      case BendType.boxOffset:
+        return 'Box Offset';
+      case BendType.offset:
+        return 'Offset';
+      case BendType.degree90:
+        return '90°';
+    }
+  }
+
+  Widget _buildNumberField(
+      String label, double value, Function(double) onChanged) {
+    return TextField(
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      keyboardType: TextInputType.number,
+      controller: TextEditingController(text: value.toStringAsFixed(2)),
+      onSubmitted: (text) {
+        final newValue = double.tryParse(text);
+        if (newValue != null) {
+          onChanged(newValue);
+          onSave();
+        }
+      },
+    );
+  }
+
+  void _updateBendProperty(int index, String property, double value) {
+    if (onUpdateBend != null) {
+      onUpdateBend!(index, {property: value});
+    }
   }
 }
 
@@ -402,7 +457,7 @@ class QuickSettingsWindowState extends State<QuickSettingsWindow>
                 controller: _tabController,
                 children: [
                   MeasurementsTab(
-                    lines: widget.state.lines,
+                    bends: widget.state.bends,
                     onAddBoxOffset: () {
                       widget.state.addBoxOffset();
                       _saveState();
@@ -416,8 +471,8 @@ class QuickSettingsWindowState extends State<QuickSettingsWindow>
                       _saveState();
                     },
                     onSave: _saveState,
-                    onUpdateMeasurement: (index, newLength) {
-                      widget.state.updateLineMeasurement(index, newLength);
+                    onUpdateBend: (index, properties) {
+                      widget.state.updateBendProperties(index, properties);
                       _saveState();
                     },
                   ),

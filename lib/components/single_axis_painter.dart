@@ -5,16 +5,13 @@ import './isometric_state.dart';
 class SingleAxisPainter extends CustomPainter {
   final IsometricState state;
   final ViewAxis axis;
-  final IsometricLine3D? selectedLine;
   static const double scale = 50.0;
-  static const double hitTestThreshold = 10.0; // Threshold for line selection
+  static const double hitTestThreshold = 10.0;
 
-  SingleAxisPainter(this.state, this.axis, {this.selectedLine})
-      : super(repaint: state);
+  SingleAxisPainter(this.state, this.axis) : super(repaint: state);
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Translate canvas to center of the view
     canvas.translate(size.width / 2, size.height / 2);
 
     final paint = Paint()
@@ -22,13 +19,78 @@ class SingleAxisPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     _drawGrid(canvas, size, paint);
-    _drawLines(canvas, paint);
+    _drawBends(canvas, paint);
     _drawPoints(canvas, paint);
+  }
 
-    // Draw selected line with emphasis
-    if (selectedLine != null) {
-      _drawSelectedLine(canvas, paint, selectedLine!);
+  void _drawBends(Canvas canvas, Paint paint) {
+    for (var bend in state.bends) {
+      final isSelected = bend == state.selectedBend;
+
+      paint.color = isSelected ? Colors.orange : Colors.blue;
+      paint.strokeWidth = isSelected ? 3.0 : 2.0;
+
+      // Draw all lines in the bend
+      for (var line in bend.lines) {
+        final start = _projectPoint(line.start);
+        final end = _projectPoint(line.end);
+
+        canvas.drawLine(start, end, paint);
+
+        // Draw connection points
+        _drawBendPoints(canvas, start, end, paint);
+      }
+
+      // If selected, draw rotation handle
+      if (isSelected) {
+        _drawRotationHandle(canvas, bend, paint);
+      }
     }
+  }
+
+  void _drawRotationHandle(Canvas canvas, Bend bend, Paint paint) {
+    // Draw a handle at the midpoint of the first line
+    if (bend.lines.isNotEmpty) {
+      final line = bend.lines.first;
+      final start = _projectPoint(line.start);
+      final end = _projectPoint(line.end);
+      final midpoint = Offset(
+        (start.dx + end.dx) / 2,
+        (start.dy + end.dy) / 2,
+      );
+
+      paint.style = PaintingStyle.fill;
+      canvas.drawCircle(midpoint, 6.0, paint);
+
+      // Draw rotation indicator
+      paint.style = PaintingStyle.stroke;
+      paint.strokeWidth = 1.0;
+      _drawRotationIndicator(canvas, midpoint, bend.inclination, paint);
+    }
+  }
+
+  void _drawRotationIndicator(
+      Canvas canvas, Offset center, double angle, Paint paint) {
+    final radius = 15.0;
+    final startAngle = -pi / 4;
+    final endAngle = pi / 4;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      startAngle,
+      endAngle - startAngle,
+      false,
+      paint,
+    );
+
+    // Draw current rotation indicator
+    final angleRad = angle * pi / 180;
+    final indicatorPoint = Offset(
+      center.dx + radius * cos(angleRad),
+      center.dy + radius * sin(angleRad),
+    );
+
+    canvas.drawLine(center, indicatorPoint, paint);
   }
 
   void _drawGrid(Canvas canvas, Size size, Paint paint) {
@@ -55,86 +117,6 @@ class SingleAxisPainter extends CustomPainter {
       final projected = _projectPoint(point);
       // Draw connection points with emphasis
       canvas.drawCircle(projected, 4.0, paint);
-    }
-  }
-
-  void _drawLines(Canvas canvas, Paint paint) {
-    paint.style = PaintingStyle.stroke;
-
-    for (var line in state.lines) {
-      // Skip selected line as it will be drawn separately
-      if (line == selectedLine) continue;
-
-      paint.color = line.isPreview ? Colors.grey : Colors.blue;
-      final start = _projectPoint(line.start);
-      final end = _projectPoint(line.end);
-
-      canvas.drawLine(start, end, paint);
-
-      // Draw small circles at bendable points
-      _drawBendPoints(canvas, start, end, paint);
-    }
-  }
-
-  void _drawSelectedLine(Canvas canvas, Paint paint, IsometricLine3D line) {
-    // Draw selected line with emphasis
-    paint.color = Colors.orange;
-    paint.strokeWidth = 3.0;
-
-    final start = _projectPoint(line.start);
-    final end = _projectPoint(line.end);
-
-    // Draw the selected line
-    canvas.drawLine(start, end, paint);
-
-    // Draw manipulation handles
-    _drawManipulationHandles(canvas, start, end, paint);
-  }
-
-  void _drawManipulationHandles(
-      Canvas canvas, Offset start, Offset end, Paint paint) {
-    paint.style = PaintingStyle.fill;
-    paint.color = Colors.orange;
-
-    // Draw handles at both ends
-    canvas.drawCircle(start, 6.0, paint);
-    canvas.drawCircle(end, 6.0, paint);
-
-    // Draw direction indicators based on the current axis
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 1.0;
-
-    // Draw manipulation guides based on the current view axis
-    _drawAxisSpecificGuides(canvas, start, end, paint);
-  }
-
-  void _drawAxisSpecificGuides(
-      Canvas canvas, Offset start, Offset end, Paint paint) {
-    final guideLength = scale / 2;
-
-    switch (axis) {
-      case ViewAxis.front:
-        // Show Y and Z manipulation guides
-        _drawGuideLines(canvas, end, guideLength, [0, 90], paint);
-        break;
-      case ViewAxis.side:
-        // Show X and Z manipulation guides
-        _drawGuideLines(canvas, end, guideLength, [0, 90], paint);
-        break;
-      case ViewAxis.top:
-        // Show X and Y manipulation guides
-        _drawGuideLines(canvas, end, guideLength, [0, 90, 180, 270], paint);
-        break;
-    }
-  }
-
-  void _drawGuideLines(Canvas canvas, Offset center, double length,
-      List<double> angles, Paint paint) {
-    for (var angle in angles) {
-      final radians = angle * pi / 180;
-      final endPoint =
-          center + Offset(cos(radians) * length, sin(radians) * length);
-      canvas.drawLine(center, endPoint, paint);
     }
   }
 
@@ -183,7 +165,5 @@ class SingleAxisPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(SingleAxisPainter oldDelegate) =>
-      oldDelegate.state != state ||
-      oldDelegate.axis != axis ||
-      oldDelegate.selectedLine != selectedLine;
+      oldDelegate.state != state || oldDelegate.axis != axis;
 }

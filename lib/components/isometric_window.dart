@@ -26,7 +26,6 @@ class IsometricWindow extends StatelessWidget {
                 painter: SingleAxisPainter(
                   state,
                   axis,
-                  selectedLine: state.selectedLine,
                 ),
                 size: Size(constraints.maxWidth, constraints.maxHeight),
               ),
@@ -43,29 +42,27 @@ class IsometricWindow extends StatelessWidget {
     final center = Offset(size.width / 2, size.height / 2);
     final localPosition = details.localPosition - center;
 
-    // Find the closest line to start rotating
-    state.selectLineNearPoint(localPosition, axis);
+    state.selectBendNearPoint(localPosition, axis);
   }
 
   void _handleRotationUpdate(DragUpdateDetails details, BuildContext context) {
-    if (state.selectedLine == null) return;
+    if (state.selectedBend == null) return;
 
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
     final size = renderBox.size;
     final center = Offset(size.width / 2, size.height / 2);
     final localPosition = details.localPosition - center;
 
-    // Calculate rotation based on drag position
-    final angle = _calculateRotationAngle(localPosition);
-    state.updateSelectedLineAngle(angle);
+    // Calculate new inclination based on drag position
+    final newInclination = _calculateInclination(localPosition, axis);
+    state.rotateBend(newInclination);
   }
 
-  double _calculateRotationAngle(Offset position) {
-    // Calculate angle based on current axis and position
+  double _calculateInclination(Offset position, ViewAxis axis) {
+    // Calculate inclination based on current axis and position
     switch (axis) {
       case ViewAxis.front:
-        return -((position.dy / SingleAxisPainter.scale) *
-            5); // Adjust sensitivity
+        return -((position.dy / SingleAxisPainter.scale) * 5);
       case ViewAxis.side:
         return -((position.dy / SingleAxisPainter.scale) * 5);
       case ViewAxis.top:

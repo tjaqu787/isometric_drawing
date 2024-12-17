@@ -41,7 +41,6 @@ class IsometricLine3D {
 
   IsometricLine3D(this.start, this.end, this.isPreview, [this.length]);
 
-  // Helper method to calculate actual length if needed
   double calculateActualLength() {
     final dx = end.x - start.x;
     final dy = end.y - start.y;
@@ -50,12 +49,274 @@ class IsometricLine3D {
   }
 }
 
+class Bend {
+  final double distance;
+  final double degrees;
+  double inclination;
+  final List<IsometricLine3D> lines;
+  final BendType type;
+
+  Bend({
+    required this.distance,
+    required this.degrees,
+    this.inclination = 0,
+    required this.lines,
+    required this.type,
+  });
+}
+
+enum BendType { boxOffset, offset, degree90 }
+
 class IsometricState extends ChangeNotifier {
   final List<Point3D> points = [];
-  final List<IsometricLine3D> lines = [];
-  IsometricLine3D? selectedLine;
-
+  final List<Bend> bends = [];
+  Bend? selectedBend;
   Point3D get startingPoint => Point3D(-5, 0, 0);
+
+  void addBoxOffset() {
+    final lastPoint = points.isEmpty ? startingPoint : points.last;
+    final distance = 1.0;
+
+    // Create points for box offset
+    final point1 = Point3D(lastPoint.x + distance, lastPoint.y, lastPoint.z);
+    final point2 =
+        Point3D(lastPoint.x + distance, lastPoint.y + distance, lastPoint.z);
+    final point3 = Point3D(
+        lastPoint.x + distance * 2, lastPoint.y + distance, lastPoint.z);
+
+    points.addAll([point1, point2, point3]);
+
+    // Create lines for the box offset
+    final lines = [
+      IsometricLine3D(lastPoint, point1, false, distance),
+      IsometricLine3D(point1, point2, false, distance),
+      IsometricLine3D(point2, point3, false, distance),
+    ];
+
+    final bend = Bend(
+      distance: distance,
+      degrees: 90,
+      lines: lines,
+      type: BendType.boxOffset,
+    );
+
+    bends.add(bend);
+    notifyListeners();
+  }
+
+  void addOffset() {
+    final lastPoint = points.isEmpty ? startingPoint : points.last;
+    final distance = 1.0;
+
+    final point1 = Point3D(
+      lastPoint.x + distance * cos(pi / 4),
+      lastPoint.y + distance * sin(pi / 4),
+      lastPoint.z,
+    );
+    points.add(point1);
+
+    final lines = [
+      IsometricLine3D(lastPoint, point1, false, distance),
+    ];
+
+    final bend = Bend(
+      distance: distance,
+      degrees: 45,
+      lines: lines,
+      type: BendType.offset,
+    );
+
+    bends.add(bend);
+    notifyListeners();
+  }
+
+  void add90Degree() {
+    final lastPoint = points.isEmpty ? startingPoint : points.last;
+    final distance = 1.0;
+
+    final point1 = Point3D(lastPoint.x, lastPoint.y + distance, lastPoint.z);
+    points.add(point1);
+
+    final lines = [
+      IsometricLine3D(lastPoint, point1, false, distance),
+    ];
+
+    final bend = Bend(
+      distance: distance,
+      degrees: 90,
+      lines: lines,
+      type: BendType.degree90,
+    );
+
+    bends.add(bend);
+    notifyListeners();
+  }
+
+  void selectBendNearPoint(Offset point, ViewAxis axis) {
+    selectedBend = bends.cast<Bend?>().firstWhere(
+          (bend) =>
+              bend!.lines.any((line) => _isLineNearPoint(line, point, axis)),
+          orElse: () => null,
+        );
+    notifyListeners();
+  }
+
+  bool _isLineNearPoint(IsometricLine3D line, Offset point, ViewAxis axis) {
+    const double threshold = 10.0;
+    final start = _projectPoint(line.start, axis);
+    final end = _projectPoint(line.end, axis);
+
+    return _distanceToLineSegment(point, start, end) < threshold;
+  }
+
+  double _distanceToLineSegment(Offset p, Offset start, Offset end) {
+    final a = p - start;
+    final b = end - start;
+    final bLen = b.distance;
+
+    if (bLen == 0) return a.distance;
+
+    final t = (a.dx * b.dx + a.dy * b.dy) / (bLen * bLen);
+
+    if (t < 0) return a.distance;
+    if (t > 1) return (p - end).distance;
+
+    return (p - (start + b * t)).distance;
+  }
+
+  Offset _projectPoint(Point3D point, ViewAxis axis) {
+    const double scale = 50.0;
+    switch (axis) {
+      case ViewAxis.front:
+        return Offset(point.y * scale, -point.z * scale);
+      case ViewAxis.side:
+        return Offset(point.x * scale, -point.z * scale);
+      case ViewAxis.top:
+        return Offset(point.x * scale, point.y * scale);
+    }
+  }
+
+  void rotateBend(double newInclination) {
+    if (selectedBend == null) return;
+
+    selectedBend!.inclination = newInclination;
+    _updateBendGeometry(selectedBend!);
+    notifyListeners();
+  }
+
+  void _updateBendGeometry(Bend bend) {
+    switch (bend.type) {
+      case BendType.boxOffset:
+        _updateBoxOffsetGeometry(bend);
+        break;
+      case BendType.offset:
+        _updateOffsetGeometry(bend);
+        break;
+      case BendType.degree90:
+        _update90DegreeGeometry(bend);
+        break;
+    }
+  }
+
+  void _updateBoxOffsetGeometry(Bend bend) {
+    if (bend.lines.isEmpty || points.isEmpty) return;
+
+    final startPoint = bend.lines.first.start;
+    final distance = bend.distance;
+    final inclinationRad = bend.inclination * pi / 180;
+
+    final point1 = Point3D(
+      startPoint.x + distance * cos(inclinationRad),
+      startPoint.y + distance * sin(inclinationRad),
+      startPoint.z,
+    );
+
+    final point2 = Point3D(
+      point1.x,
+      point1.y + distance,
+      point1.z,
+    );
+
+    final point3 = Point3D(
+      point2.x + distance,
+      point2.y,
+      point2.z,
+    );
+
+    bend.lines[0] = IsometricLine3D(startPoint, point1, false, distance);
+    bend.lines[1] = IsometricLine3D(point1, point2, false, distance);
+    bend.lines[2] = IsometricLine3D(point2, point3, false, distance);
+
+    final startIndex = points.indexOf(startPoint);
+    if (startIndex != -1 && startIndex + 3 <= points.length) {
+      points[startIndex + 1] = point1;
+      points[startIndex + 2] = point2;
+      points[startIndex + 3] = point3;
+    }
+  }
+
+  void _updateOffsetGeometry(Bend bend) {
+    if (bend.lines.isEmpty || points.isEmpty) return;
+
+    final startPoint = bend.lines.first.start;
+    final distance = bend.distance;
+    final inclinationRad = bend.inclination * pi / 180;
+
+    final endPoint = Point3D(
+      startPoint.x + distance * cos(inclinationRad),
+      startPoint.y + distance * sin(inclinationRad),
+      startPoint.z,
+    );
+
+    bend.lines[0] = IsometricLine3D(startPoint, endPoint, false, distance);
+
+    final startIndex = points.indexOf(startPoint);
+    if (startIndex != -1 && startIndex + 1 < points.length) {
+      points[startIndex + 1] = endPoint;
+    }
+  }
+
+  void _update90DegreeGeometry(Bend bend) {
+    if (bend.lines.isEmpty || points.isEmpty) return;
+
+    final startPoint = bend.lines.first.start;
+    final distance = bend.distance;
+    final inclinationRad = bend.inclination * pi / 180;
+
+    final endPoint = Point3D(
+      startPoint.x + distance * cos(inclinationRad),
+      startPoint.y + distance * sin(inclinationRad),
+      startPoint.z,
+    );
+
+    bend.lines[0] = IsometricLine3D(startPoint, endPoint, false, distance);
+
+    final startIndex = points.indexOf(startPoint);
+    if (startIndex != -1 && startIndex + 1 < points.length) {
+      points[startIndex + 1] = endPoint;
+    }
+  }
+
+  void updateBendProperties(int index, Map<String, double> properties) {
+    if (index < 0 || index >= bends.length) return;
+
+    final bend = bends[index];
+    if (properties.containsKey('distance')) {
+      // Update distance logic
+    }
+    if (properties.containsKey('inclination')) {
+      bend.inclination = properties['inclination']!;
+      _updateBendGeometry(bend);
+    }
+    notifyListeners();
+  }
+
+  void clearAll() {
+    points.clear();
+    bends.clear();
+    selectedBend = null;
+    notifyListeners();
+  }
 
   Map<String, dynamic> getCurrentState() {
     return {
@@ -67,22 +328,23 @@ class IsometricState extends ChangeNotifier {
                 'angle': p.angle,
               })
           .toList(),
-      'lines': lines
-          .map((l) => {
-                'start': {
-                  'x': l.start.x,
-                  'y': l.start.y,
-                  'z': l.start.z,
-                  'angle': l.start.angle,
-                },
-                'end': {
-                  'x': l.end.x,
-                  'y': l.end.y,
-                  'z': l.end.z,
-                  'angle': l.end.angle,
-                },
-                'isPreview': l.isPreview,
-                'length': l.length,
+      'bends': bends
+          .map((b) => {
+                'distance': b.distance,
+                'degrees': b.degrees,
+                'inclination': b.inclination,
+                'type': b.type.toString(),
+                'lines': b.lines
+                    .map((l) => {
+                          'start': {
+                            'x': l.start.x,
+                            'y': l.start.y,
+                            'z': l.start.z
+                          },
+                          'end': {'x': l.end.x, 'y': l.end.y, 'z': l.end.z},
+                          'length': l.length,
+                        })
+                    .toList(),
               })
           .toList(),
     };
@@ -90,11 +352,9 @@ class IsometricState extends ChangeNotifier {
 
   void restoreState(Map<String, dynamic> state) {
     points.clear();
-    lines.clear();
+    bends.clear();
 
     final pointsList = state['points'] as List;
-    final linesList = state['lines'] as List;
-
     for (var p in pointsList) {
       points.add(Point3D(
         p['x'] as double,
@@ -104,141 +364,30 @@ class IsometricState extends ChangeNotifier {
       ));
     }
 
-    for (var l in linesList) {
-      final start = l['start'];
-      final end = l['end'];
-      lines.add(IsometricLine3D(
-        Point3D(
-          start['x'] as double,
-          start['y'] as double,
-          start['z'] as double,
-          start['angle'] as double?,
-        ),
-        Point3D(
-          end['x'] as double,
-          end['y'] as double,
-          end['z'] as double,
-          end['angle'] as double?,
-        ),
-        l['isPreview'] as bool,
-        l['length'] as double?,
+    final bendsList = state['bends'] as List;
+    for (var b in bendsList) {
+      final linesList = b['lines'] as List;
+      final lines = linesList.map((l) {
+        final start = l['start'];
+        final end = l['end'];
+        return IsometricLine3D(
+          Point3D(
+              start['x'] as double, start['y'] as double, start['z'] as double),
+          Point3D(end['x'] as double, end['y'] as double, end['z'] as double),
+          false,
+          l['length'] as double?,
+        );
+      }).toList();
+
+      bends.add(Bend(
+        distance: b['distance'] as double,
+        degrees: b['degrees'] as double,
+        inclination: b['inclination'] as double,
+        lines: lines,
+        type: BendType.values.firstWhere((e) => e.toString() == b['type']),
       ));
     }
 
     notifyListeners();
-  }
-
-  void clearAll() {
-    points.clear();
-    lines.clear();
-    notifyListeners();
-  }
-
-  void selectLineNearPoint(Offset point, ViewAxis axis) {
-    // Find the closest line to the given point
-    selectedLine = lines.cast<IsometricLine3D?>().firstWhere(
-          (line) => _isPointNearLine(point, line!, axis),
-          orElse: () => null,
-        );
-    notifyListeners();
-  }
-
-  bool _isPointNearLine(Offset point, IsometricLine3D line, ViewAxis axis) {
-    // Implement hit testing based on the current view axis
-    // You can reuse the logic from SingleAxisPainter's isPointNearLine method
-    return true; // Implement proper hit testing
-  }
-
-  void updateSelectedLineAngle(double angle) {
-    if (selectedLine == null) return;
-
-    // Update the end point of the selected line based on the angle
-    final start = selectedLine!.start;
-    final length = selectedLine!.calculateActualLength();
-
-    // Calculate new end point based on angle and current axis
-    final end = _calculateNewEndPoint(start, length, angle);
-
-    // Replace the selected line with the rotated version
-    final index = lines.indexOf(selectedLine!);
-    if (index != -1) {
-      lines[index] = IsometricLine3D(start, end, false, length);
-      selectedLine = lines[index];
-      notifyListeners();
-    }
-  }
-
-  Point3D _calculateNewEndPoint(Point3D start, double length, double angle) {
-    // Calculate new end point based on rotation angle
-    // This will depend on your specific requirements for how lines should rotate
-    return Point3D(
-      start.x + length * cos(angle * pi / 180),
-      start.y,
-      start.z + length * sin(angle * pi / 180),
-    );
-  }
-
-  void addBoxOffset() {
-    final lastPoint = points.isEmpty ? startingPoint : points.last;
-
-    // Create symbolic box shape
-    final point1 = Point3D(lastPoint.x + 1, lastPoint.y, lastPoint.z);
-    final point2 = Point3D(lastPoint.x + 1, lastPoint.y + 1, lastPoint.z);
-    final point3 = Point3D(lastPoint.x + 2, lastPoint.y + 1, lastPoint.z);
-
-    // Add points
-    points.addAll([point1, point2, point3]);
-
-    // Add lines with symbolic measurements
-    lines.add(IsometricLine3D(lastPoint, point1, false, 1.0));
-    lines.add(IsometricLine3D(point1, point2, false, 1.0));
-    lines.add(IsometricLine3D(point2, point3, false, 1.0));
-
-    notifyListeners();
-  }
-
-  void addOffset() {
-    final lastPoint = points.isEmpty ? startingPoint : points.last;
-
-    // Create symbolic box shape
-    final point1 = Point3D(lastPoint.x + 1, lastPoint.y, lastPoint.z);
-    final point2 = Point3D(lastPoint.x + 1, lastPoint.y + 1, lastPoint.z);
-    final point3 = Point3D(lastPoint.x + 2, lastPoint.y + 1, lastPoint.z);
-
-    // Add points
-    points.addAll([point1, point2, point3]);
-
-    // Add lines with symbolic measurements
-    lines.add(IsometricLine3D(lastPoint, point1, false, 1.0));
-    lines.add(IsometricLine3D(point1, point2, false, 1.0));
-    lines.add(IsometricLine3D(point2, point3, false, 1.0));
-
-    notifyListeners();
-  }
-
-  void add90Degree() {
-    final lastPoint = points.isEmpty ? startingPoint : points.last;
-
-    // Create symbolic box shape
-    final point1 = Point3D(lastPoint.x + 1, lastPoint.y, lastPoint.z);
-    final point2 = Point3D(lastPoint.x + 1, lastPoint.y + 1, lastPoint.z);
-
-    // Add points
-    points.addAll([point1, point2]);
-
-    // Add lines with symbolic measurements
-    lines.add(IsometricLine3D(lastPoint, point1, false, 1.0));
-    lines.add(IsometricLine3D(point1, point2, false, 1.0));
-
-    notifyListeners();
-  }
-
-  void updateLineMeasurement(int lineIndex, double newLength) {
-    if (lineIndex >= 0 && lineIndex < lines.length) {
-      final line = lines[lineIndex];
-      lines[lineIndex] =
-          IsometricLine3D(line.start, line.end, line.isPreview, newLength);
-      notifyListeners();
-    }
   }
 }
