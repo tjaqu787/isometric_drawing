@@ -1,6 +1,6 @@
 // In quick_settings.dart
 import 'package:flutter/material.dart';
-import './settings_tab.dart';
+import 'setup_tab.dart';
 import './measurement_tab.dart';
 
 class QuickSettingsWindow extends StatefulWidget {
@@ -48,7 +48,7 @@ class _QuickSettingsWindowState extends State<QuickSettingsWindow>
       controller: _tabController,
       tabs: const [
         Tab(text: 'Measurements'),
-        Tab(text: 'Settings'),
+        Tab(text: 'Setup'),
       ],
       labelColor: Theme.of(context).colorScheme.primary,
       indicatorColor: Theme.of(context).colorScheme.primary,

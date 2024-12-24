@@ -31,8 +31,8 @@ class QuickSettingsButtonBar extends StatelessWidget {
             child: const Text('90°'),
           ),
           ElevatedButton(
-            onPressed: () => appState.add90Degree(),
-            child: const Text('Kick 90°'),
+            onPressed: () => appState.addKick(),
+            child: const Text('Kick'),
           ),
           ElevatedButton(
             onPressed: () => appState.clearAll(),

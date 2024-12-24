@@ -7,11 +7,7 @@ enum ViewAxis {
   top,
 }
 
-enum BendType {
-  boxOffset,
-  offset,
-  degree90,
-}
+enum BendType { boxOffset, offset, degree90, kick }
 
 class Point3D {
   final double x;
@@ -59,6 +55,10 @@ class Bend {
   final double distance;
   final double degrees;
   double inclination;
+  double x;
+  double y;
+  double angle;
+  String measurementPoint; // For start/end selection
   final List<IsometricLine3D> lines;
   final BendType type;
 
@@ -66,6 +66,10 @@ class Bend {
     required this.distance,
     required this.degrees,
     this.inclination = 0,
+    this.x = 0,
+    this.y = 0,
+    this.angle = 0,
+    this.measurementPoint = 'start',
     required this.lines,
     required this.type,
   });
@@ -138,7 +142,6 @@ class AppState extends ChangeNotifier {
     });
   }
 
-  // Bend manipulation methods
   void addBoxOffset() {
     final lastPoint = points.isEmpty ? startingPoint : points.last;
     final distance = 1.0;
@@ -158,6 +161,10 @@ class AppState extends ChangeNotifier {
     final bend = Bend(
       distance: distance,
       degrees: 90,
+      x: 0,
+      y: 0,
+      angle: 0,
+      measurementPoint: 'start',
       lines: lines,
       type: BendType.boxOffset,
     );
@@ -186,8 +193,42 @@ class AppState extends ChangeNotifier {
     final bend = Bend(
       distance: distance,
       degrees: 90,
+      x: 0,
+      y: 0,
+      angle: 0,
+      measurementPoint: 'start',
       lines: lines,
       type: BendType.offset,
+    );
+
+    bends.add(bend);
+    _saveToHistory();
+    notifyListeners();
+  }
+
+  void addKick() {
+    final lastPoint = points.isEmpty ? startingPoint : points.last;
+    final distance = sqrt(2);
+
+    final point1 = Point3D(lastPoint.x + distance, lastPoint.y, lastPoint.z);
+    final point2 = Point3D(point1.x, point1.y + distance, point1.z);
+
+    points.addAll([point1, point2]);
+
+    final lines = [
+      IsometricLine3D(lastPoint, point1, false, distance),
+      IsometricLine3D(point1, point2, false, distance),
+    ];
+
+    final bend = Bend(
+      distance: distance,
+      degrees: 22.5,
+      x: 0,
+      y: 0,
+      angle: 0,
+      measurementPoint: 'start',
+      lines: lines,
+      type: BendType.kick,
     );
 
     bends.add(bend);
@@ -212,11 +253,44 @@ class AppState extends ChangeNotifier {
     final bend = Bend(
       distance: distance,
       degrees: 90,
+      x: 0,
+      y: 0,
+      angle: 0,
+      measurementPoint: 'start',
       lines: lines,
       type: BendType.degree90,
     );
 
     bends.add(bend);
+    _saveToHistory();
+    notifyListeners();
+  }
+
+  // Update bend properties method
+  void updateBendProperties(int index, Map<String, dynamic> properties) {
+    if (index < 0 || index >= bends.length) return;
+
+    final bend = bends[index];
+    if (properties.containsKey('distance')) {
+      // Update distance logic here
+    }
+    if (properties.containsKey('inclination')) {
+      bend.inclination = properties['inclination']!;
+    }
+    if (properties.containsKey('x')) {
+      bend.x = properties['x']!;
+    }
+    if (properties.containsKey('y')) {
+      bend.y = properties['y']!;
+    }
+    if (properties.containsKey('angle')) {
+      bend.angle = properties['angle']!;
+    }
+    if (properties.containsKey('measurementPoint')) {
+      bend.measurementPoint = properties['measurementPoint']!;
+    }
+
+    _updateBendGeometry(bend);
     _saveToHistory();
     notifyListeners();
   }
@@ -227,21 +301,6 @@ class AppState extends ChangeNotifier {
               bend!.lines.any((line) => _isLineNearPoint(line, point, axis)),
           orElse: () => null,
         );
-    notifyListeners();
-  }
-
-  void updateBendProperties(int index, Map<String, double> properties) {
-    if (index < 0 || index >= bends.length) return;
-
-    final bend = bends[index];
-    if (properties.containsKey('distance')) {
-      // Update distance logic here
-    }
-    if (properties.containsKey('inclination')) {
-      bend.inclination = properties['inclination']!;
-      _updateBendGeometry(bend);
-    }
-    _saveToHistory();
     notifyListeners();
   }
 
@@ -324,6 +383,9 @@ class AppState extends ChangeNotifier {
         break;
       case BendType.degree90:
         _update90DegreeGeometry(bend);
+        break;
+      case BendType.kick:
+        _updateOffsetGeometry(bend);
         break;
     }
   }

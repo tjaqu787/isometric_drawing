@@ -32,7 +32,7 @@ class MeasurementsTab extends StatelessWidget {
   }
 }
 
-class _BendCard extends StatelessWidget {
+class _BendCard extends StatefulWidget {
   final int index;
   final Bend bend;
   final bool isSelected;
@@ -44,65 +44,149 @@ class _BendCard extends StatelessWidget {
   });
 
   @override
+  State<_BendCard> createState() => _BendCardState();
+}
+
+class _BendCardState extends State<_BendCard> {
+  bool isExpanded = true;
+
+  @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.all(8),
-      elevation: isSelected ? 8 : 1,
-      color: isSelected ? Theme.of(context).colorScheme.primaryContainer : null,
+      elevation: widget.isSelected ? 8 : 1,
+      color: widget.isSelected
+          ? Theme.of(context).colorScheme.primaryContainer
+          : null,
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Bend ${index + 1} (${_getBendTypeName(bend.type)})',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
+            // Header row with toggle
             Row(
               children: [
                 Expanded(
-                  child: _NumberField(
-                    label: 'Distance',
-                    value: bend.distance,
-                    onChanged: (value) => _updateBendProperty(
-                      context,
-                      'distance',
-                      value,
-                    ),
+                  child: Text(
+                    'Bend ${widget.index + 1} (${_getBendTypeName(widget.bend.type)})',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _NumberField(
-                    label: 'Inclination',
-                    value: bend.inclination,
-                    onChanged: (value) => _updateBendProperty(
-                      context,
-                      'inclination',
-                      value,
-                    ),
-                  ),
+                IconButton(
+                  icon:
+                      Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
+                  onPressed: () {
+                    setState(() {
+                      isExpanded = !isExpanded;
+                    });
+                  },
                 ),
               ],
             ),
-            if (isSelected) ...[
+            // Collapsible content
+            if (isExpanded) ...[
               const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      'Length: ${_calculateTotalLength(bend)}',
-                      style: Theme.of(context).textTheme.bodyMedium,
+                    child: _NumberField(
+                      label: 'Distance',
+                      value: widget.bend.distance,
+                      onChanged: (value) => _updateBendProperty(
+                        context,
+                        'distance',
+                        value,
+                      ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: () => _deleteBend(context),
-                    tooltip: 'Delete bend',
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _NumberField(
+                      label: 'Inclination',
+                      value: widget.bend.inclination,
+                      onChanged: (value) => _updateBendProperty(
+                        context,
+                        'inclination',
+                        value,
+                      ),
+                    ),
                   ),
                 ],
               ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _NumberField(
+                      label: 'X',
+                      value: widget.bend.x,
+                      onChanged: (value) => _updateBendProperty(
+                        context,
+                        'x',
+                        value,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _NumberField(
+                      label: 'Y',
+                      value: widget.bend.y,
+                      onChanged: (value) => _updateBendProperty(
+                        context,
+                        'y',
+                        value,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (widget.bend.type == BendType.kick ||
+                  widget.bend.type == BendType.degree90) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: _AngleDropdown(
+                        value: widget.bend.angle,
+                        onChanged: (value) => _updateBendProperty(
+                          context,
+                          'angle',
+                          value,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+              Row(
+                children: [
+                  Expanded(
+                    child: _MeasurementPointDropdown(
+                      value: widget.bend.measurementPoint,
+                      onChanged: (value) => _updateBendProperty(
+                        context,
+                        'measurementPoint',
+                        value,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (widget.isSelected) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Length: ${_calculateTotalLength(widget.bend)}',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ],
         ),
@@ -118,6 +202,8 @@ class _BendCard extends StatelessWidget {
         return 'Offset';
       case BendType.degree90:
         return '90°';
+      case BendType.kick:
+        return 'Kick';
     }
   }
 
@@ -130,16 +216,75 @@ class _BendCard extends StatelessWidget {
   }
 
   void _updateBendProperty(
-      BuildContext context, String property, double value) {
+      BuildContext context, String property, dynamic value) {
     context.read<AppState>().updateBendProperties(
-      index,
+      widget.index,
       {property: value},
     );
   }
+}
 
-  void _deleteBend(BuildContext context) {
-    // Add delete functionality to AppState if needed
-    // context.read<AppState>().deleteBend(index);
+class _MeasurementPointDropdown extends StatelessWidget {
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  const _MeasurementPointDropdown({
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      decoration: const InputDecoration(
+        labelText: 'Measurement Point',
+        border: OutlineInputBorder(),
+      ),
+      value: value,
+      items: ['start', 'end'].map((point) {
+        return DropdownMenuItem<String>(
+          value: point,
+          child: Text(point.capitalize()),
+        );
+      }).toList(),
+      onChanged: (newValue) {
+        if (newValue != null) {
+          onChanged(newValue);
+        }
+      },
+    );
+  }
+}
+
+class _AngleDropdown extends StatelessWidget {
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  const _AngleDropdown({
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<double>(
+      decoration: const InputDecoration(
+        labelText: 'Angle',
+        border: OutlineInputBorder(),
+      ),
+      value: value,
+      items: [0.0, 45.0, 90.0, 135.0, 180.0].map((angle) {
+        return DropdownMenuItem<double>(
+          value: angle,
+          child: Text('${angle.toStringAsFixed(0)}°'),
+        );
+      }).toList(),
+      onChanged: (newValue) {
+        if (newValue != null) {
+          onChanged(newValue);
+        }
+      },
+    );
   }
 }
 
@@ -170,5 +315,11 @@ class _NumberField extends StatelessWidget {
         }
       },
     );
+  }
+}
+
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }
