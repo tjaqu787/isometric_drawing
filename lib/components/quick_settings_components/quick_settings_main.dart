@@ -1,3 +1,4 @@
+// In quick_settings.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import './settings_tab.dart';
@@ -29,21 +30,16 @@ class _QuickSettingsWindowState extends State<QuickSettingsWindow>
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => AppState(),
-      child: Builder(
-        builder: (context) => Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                _buildTabBar(context),
-                const SizedBox(height: 8),
-                Expanded(child: _buildTabBarView()),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            _buildTabBar(context),
+            const SizedBox(height: 8),
+            Expanded(child: _buildTabBarView()),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );
@@ -56,7 +52,6 @@ class _QuickSettingsWindowState extends State<QuickSettingsWindow>
         Tab(text: 'Measurements'),
         Tab(text: 'Settings'),
       ],
-      // Ensure tab colors work well with current theme
       labelColor: Theme.of(context).colorScheme.primary,
       indicatorColor: Theme.of(context).colorScheme.primary,
       unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,

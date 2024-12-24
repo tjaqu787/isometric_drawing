@@ -1,4 +1,3 @@
-// lib/state/app_state.dart
 import 'package:flutter/material.dart';
 import 'dart:math';
 
@@ -96,25 +95,38 @@ class AppState extends ChangeNotifier {
   void updatePipeSize(String size) {
     _pipeSize = size;
     _saveToHistory();
+    _updateGeometryWithSettings();
+
     notifyListeners();
   }
 
   void updateAngle(String newAngle) {
     _angle = newAngle;
     _saveToHistory();
+    _updateGeometryWithSettings();
+
     notifyListeners();
   }
 
   void updateBoxOffset(double offset) {
     _boxOffset = offset;
     _saveToHistory();
+    _updateGeometryWithSettings();
     notifyListeners();
   }
 
   void updateIndex(String newIndex) {
     _index = newIndex;
     _saveToHistory();
+    _updateGeometryWithSettings();
     notifyListeners();
+  }
+
+  void _updateGeometryWithSettings() {
+    // Update all bends with current settings
+    for (var bend in bends) {
+      _updateBendGeometry(bend);
+    }
   }
 
   void _saveToHistory() {
@@ -157,16 +169,18 @@ class AppState extends ChangeNotifier {
 
   void addOffset() {
     final lastPoint = points.isEmpty ? startingPoint : points.last;
-    final distance = 1.0;
+    final distance = 1.5;
 
     final point1 = Point3D(lastPoint.x + distance, lastPoint.y, lastPoint.z);
     final point2 = Point3D(point1.x, point1.y + distance, point1.z);
+    final point3 = Point3D(point2.x + distance, point2.y, point2.z);
 
-    points.addAll([point1, point2]);
+    points.addAll([point1, point2, point3]);
 
     final lines = [
       IsometricLine3D(lastPoint, point1, false, distance),
       IsometricLine3D(point1, point2, false, distance),
+      IsometricLine3D(point2, point3, false, distance),
     ];
 
     final bend = Bend(
@@ -252,6 +266,7 @@ class AppState extends ChangeNotifier {
       _boxOffset = previous['boxOffset'];
       _index = previous['index'];
 
+      _updateGeometryWithSettings();
       notifyListeners();
     }
   }
