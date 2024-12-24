@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../components/isometric_state.dart';
-import '../components/isometric_window.dart';
+import '../components/isometric_components/isometric_window.dart';
 import '../components/quick_settings_components/quick_settings.dart';
 
 class IsometricView extends StatefulWidget {

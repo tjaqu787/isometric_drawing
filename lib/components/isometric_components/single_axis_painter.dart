@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-import './isometric_state.dart';
+import '../isometric_state.dart';
 
 class SingleAxisPainter extends CustomPainter {
   final AppState state;

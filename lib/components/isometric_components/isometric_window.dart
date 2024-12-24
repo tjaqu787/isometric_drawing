@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import './isometric_state.dart';
-import './single_axis_painter.dart';
+import '../isometric_state.dart';
+import 'single_axis_painter.dart';
 
 class IsometricWindow extends StatelessWidget {
   final AppState state;
