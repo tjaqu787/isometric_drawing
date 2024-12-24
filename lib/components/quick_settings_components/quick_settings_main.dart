@@ -1,4 +1,7 @@
 // In quick_settings.dart
+// This file is meant to bring together setup tab and measurement tab in a window that
+// is callable from the main window screen
+
 import 'package:flutter/material.dart';
 import 'setup_tab.dart';
 import './measurement_tab.dart';

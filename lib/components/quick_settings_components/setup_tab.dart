@@ -1,3 +1,5 @@
+// This is the setup tab of the settings window
+
 import 'package:flutter/material.dart';
 import './quick_settings_button_bar.dart';
 import '../isometric_state.dart';
@@ -68,11 +70,12 @@ class _LeftColumn extends StatelessWidget {
   }
 
   Widget _buildQuantityDropdown() {
-    return DropdownButton<String>(
+    return DropdownButton<num>(
       value: appState.index,
       isExpanded: true,
-      items: ['1', '2', '3', '4', '5', '6'].map((quantity) {
-        return DropdownMenuItem(value: quantity, child: Text(quantity));
+      items: [1, 2, 3, 4, 5, 6].map((quantity) {
+        return DropdownMenuItem(
+            value: quantity, child: Text(quantity.toString()));
       }).toList(),
       onChanged: (value) => appState.updateIndex(value!),
     );

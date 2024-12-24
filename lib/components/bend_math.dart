@@ -2,6 +2,8 @@ import 'dart:math';
 
 // EMT (Electrical Metallic Tubing) conduit bending properties
 // All measurements are in inches unless otherwise specified
+// This file is meant to be called before an API request
+// to normalise values and correct for things like shrinkage and springback
 
 enum ConduitSize {
   half, // 1/2"

@@ -1,3 +1,5 @@
+// This is a pretty big state file, have fun maintaining this
+//
 import 'package:flutter/material.dart';
 import 'dart:math';
 
@@ -86,14 +88,14 @@ class AppState extends ChangeNotifier {
   String _pipeSize = '1/2"';
   double _angle = 22.5;
   double _boxOffset = 0.5;
-  String _index = '1';
+  num _index = 1;
   final List<Map<String, dynamic>> _undoHistory = [];
 
   // Settings getters
   String get pipeSize => _pipeSize;
   double get angle => _angle;
   double get boxOffset => _boxOffset;
-  String get index => _index;
+  num get index => _index;
 
   // Settings methods
   void updatePipeSize(String size) {
@@ -119,7 +121,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateIndex(String newIndex) {
+  void updateIndex(num newIndex) {
     _index = newIndex;
     _saveToHistory();
     _updateGeometryWithSettings();
