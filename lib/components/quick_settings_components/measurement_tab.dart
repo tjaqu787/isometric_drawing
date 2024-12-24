@@ -266,9 +266,9 @@ class _AngleDropdown extends StatelessWidget {
         border: OutlineInputBorder(),
       ),
       value: value,
-      items: [10.0, 22.5, 30.0, 45.0, 60.0].map((angle) {
+      items: [10, 22.5, 30, 45, 60].map((angle) {
         return DropdownMenuItem<double>(
-          value: angle,
+          value: angle.toDouble(),
           child: Text('${angle.toStringAsFixed(1)}°'),
         );
       }).toList(),

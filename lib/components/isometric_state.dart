@@ -53,7 +53,7 @@ class IsometricLine3D {
 
 class Bend {
   final double distance;
-  final double degrees;
+  final double degrees; // degrees and angle might be the same thing
   double inclination;
   double x;
   double y;
@@ -68,7 +68,7 @@ class Bend {
     this.inclination = 0,
     this.x = 0,
     this.y = 0,
-    this.angle = 0,
+    this.angle = 22.5,
     this.measurementPoint = 'start',
     required this.lines,
     required this.type,
@@ -160,10 +160,10 @@ class AppState extends ChangeNotifier {
 
     final bend = Bend(
       distance: distance,
-      degrees: 90,
+      degrees: 22.5,
       x: 0,
       y: 0,
-      angle: 0,
+      angle: 22.5,
       measurementPoint: 'start',
       lines: lines,
       type: BendType.boxOffset,
@@ -192,10 +192,10 @@ class AppState extends ChangeNotifier {
 
     final bend = Bend(
       distance: distance,
-      degrees: 90,
+      degrees: 22.5,
       x: 0,
       y: 0,
-      angle: 0,
+      angle: 22.5,
       measurementPoint: 'start',
       lines: lines,
       type: BendType.offset,
@@ -225,7 +225,7 @@ class AppState extends ChangeNotifier {
       degrees: 22.5,
       x: 0,
       y: 0,
-      angle: 0,
+      angle: 22.5,
       measurementPoint: 'start',
       lines: lines,
       type: BendType.kick,
@@ -255,7 +255,7 @@ class AppState extends ChangeNotifier {
       degrees: 90,
       x: 0,
       y: 0,
-      angle: 0,
+      angle: 90,
       measurementPoint: 'start',
       lines: lines,
       type: BendType.degree90,

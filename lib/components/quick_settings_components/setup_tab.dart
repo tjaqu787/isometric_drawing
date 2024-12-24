@@ -107,7 +107,7 @@ class _RightColumn extends StatelessWidget {
     return DropdownButton<double>(
       value: appState.angle,
       isExpanded: true,
-      items: [10, 22, 30, 45, 60].map((angle) {
+      items: [10, 22.5, 30, 45, 60].map((angle) {
         return DropdownMenuItem(
           value: angle.toDouble(),
           child: Text('${angle.toStringAsFixed(1)}°'),
