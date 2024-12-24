@@ -58,7 +58,7 @@ class Bend {
   double x;
   double y;
   double angle;
-  String measurementPoint; // For start/end selection
+  String measurementPoint;
   final List<IsometricLine3D> lines;
   final BendType type;
 
@@ -266,7 +266,6 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Update bend properties method
   void updateBendProperties(int index, Map<String, dynamic> properties) {
     if (index < 0 || index >= bends.length) return;
 
@@ -330,7 +329,6 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  // Helper methods
   bool _isLineNearPoint(IsometricLine3D line, Offset point, ViewAxis axis) {
     const double threshold = 10.0;
     final start = _projectPoint(line.start, axis);

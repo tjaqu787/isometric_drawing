@@ -49,8 +49,8 @@ class _LeftColumn extends StatelessWidget {
           child: _buildPipeSizeDropdown(),
         ),
         _SettingSection(
-          title: 'Index:',
-          child: _buildIndexDropdown(),
+          title: 'Quantity:',
+          child: _buildQuantityDropdown(),
         ),
       ],
     );
@@ -67,12 +67,12 @@ class _LeftColumn extends StatelessWidget {
     );
   }
 
-  Widget _buildIndexDropdown() {
+  Widget _buildQuantityDropdown() {
     return DropdownButton<String>(
       value: appState.index,
       isExpanded: true,
-      items: ['1', '2', '3', '4', '5'].map((index) {
-        return DropdownMenuItem(value: index, child: Text(index));
+      items: ['1', '2', '3', '4', '5', '6'].map((quantity) {
+        return DropdownMenuItem(value: quantity, child: Text(quantity));
       }).toList(),
       onChanged: (value) => appState.updateIndex(value!),
     );
@@ -207,5 +207,13 @@ class _BottomActionBar extends StatelessWidget {
     debugPrint('Sending data...');
     debugPrint('Pipe Size: ${appState.pipeSize}');
     debugPrint('Bend Angle: ${appState.angle}°');
+    debugPrint('Quantity: ${appState.index}');
+
+    // Print all bends
+    debugPrint('\nBends:');
+    for (var i = 0; i < appState.bends.length; i++) {
+      final bend = appState.bends[i];
+      debugPrint('Bend $i: $bend');
+    }
   }
 }
