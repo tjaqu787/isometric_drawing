@@ -1,16 +1,19 @@
 // This is a pretty big state file, have fun maintaining this
-//
+// Point 3d and lin
 import 'package:flutter/material.dart';
 import 'dart:math';
 
+// meant for the isometric rendering process
 enum ViewAxis {
   front,
   side,
   top,
 }
 
+// helper type
 enum BendType { boxOffset, offset, degree90, kick }
 
+// meant to be used internally for rendering
 class Point3D {
   final double x;
   final double y;
@@ -37,6 +40,7 @@ class Point3D {
   }
 }
 
+// meant to be used internally for rendering
 class IsometricLine3D {
   final Point3D start;
   final Point3D end;
@@ -53,6 +57,10 @@ class IsometricLine3D {
   }
 }
 
+// meant to be used internally and externally
+// internally we use this primarily for state
+// Externally we are going to change this type a bit
+//  and use it as an API
 class Bend {
   final double distance;
   final double degrees; // degrees and angle might be the same thing
@@ -77,6 +85,7 @@ class Bend {
   });
 }
 
+// meant to be a container for everything
 class AppState extends ChangeNotifier {
   // Isometric state
   final List<Point3D> points = [];
