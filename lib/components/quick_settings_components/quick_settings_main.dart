@@ -1,9 +1,7 @@
 // In quick_settings.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import './settings_tab.dart';
 import './measurement_tab.dart';
-import '../isometric_state.dart';
 
 class QuickSettingsWindow extends StatefulWidget {
   const QuickSettingsWindow({super.key});
