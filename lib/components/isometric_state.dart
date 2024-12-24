@@ -1,3 +1,4 @@
+// lib/state/app_state.dart
 import 'package:flutter/material.dart';
 import 'dart:math';
 
@@ -5,6 +6,12 @@ enum ViewAxis {
   front,
   side,
   top,
+}
+
+enum BendType {
+  boxOffset,
+  offset,
+  degree90,
 }
 
 class Point3D {
@@ -24,11 +31,11 @@ class Point3D {
   Offset projectToView(ViewAxis viewAxis) {
     switch (viewAxis) {
       case ViewAxis.front:
-        return Offset(y, z); // YZ plane
+        return Offset(y, z);
       case ViewAxis.side:
-        return Offset(x, z); // XZ plane
+        return Offset(x, z);
       case ViewAxis.top:
-        return Offset(x, y); // XY plane
+        return Offset(x, y);
     }
   }
 }
@@ -65,28 +72,71 @@ class Bend {
   });
 }
 
-enum BendType { boxOffset, offset, degree90 }
-
-class IsometricState extends ChangeNotifier {
+class AppState extends ChangeNotifier {
+  // Isometric state
   final List<Point3D> points = [];
   final List<Bend> bends = [];
   Bend? selectedBend;
   Point3D get startingPoint => Point3D(-5, 0, 0);
 
+  // Settings state
+  String _pipeSize = '1/2"';
+  String _angle = '45';
+  double _boxOffset = 0.5;
+  String _index = '1';
+  final List<Map<String, dynamic>> _undoHistory = [];
+
+  // Settings getters
+  String get pipeSize => _pipeSize;
+  String get angle => _angle;
+  double get boxOffset => _boxOffset;
+  String get index => _index;
+
+  // Settings methods
+  void updatePipeSize(String size) {
+    _pipeSize = size;
+    _saveToHistory();
+    notifyListeners();
+  }
+
+  void updateAngle(String newAngle) {
+    _angle = newAngle;
+    _saveToHistory();
+    notifyListeners();
+  }
+
+  void updateBoxOffset(double offset) {
+    _boxOffset = offset;
+    _saveToHistory();
+    notifyListeners();
+  }
+
+  void updateIndex(String newIndex) {
+    _index = newIndex;
+    _saveToHistory();
+    notifyListeners();
+  }
+
+  void _saveToHistory() {
+    _undoHistory.add({
+      'pipeSize': _pipeSize,
+      'angle': _angle,
+      'boxOffset': _boxOffset,
+      'index': _index,
+    });
+  }
+
+  // Bend manipulation methods
   void addBoxOffset() {
     final lastPoint = points.isEmpty ? startingPoint : points.last;
     final distance = 1.0;
 
-    // Create points for box offset
     final point1 = Point3D(lastPoint.x + distance, lastPoint.y, lastPoint.z);
-    final point2 =
-        Point3D(lastPoint.x + distance, lastPoint.y + distance, lastPoint.z);
-    final point3 = Point3D(
-        lastPoint.x + distance * 2, lastPoint.y + distance, lastPoint.z);
+    final point2 = Point3D(point1.x, point1.y + distance, point1.z);
+    final point3 = Point3D(point2.x + distance, point2.y, point2.z);
 
     points.addAll([point1, point2, point3]);
 
-    // Create lines for the box offset
     final lines = [
       IsometricLine3D(lastPoint, point1, false, distance),
       IsometricLine3D(point1, point2, false, distance),
@@ -101,6 +151,7 @@ class IsometricState extends ChangeNotifier {
     );
 
     bends.add(bend);
+    _saveToHistory();
     notifyListeners();
   }
 
@@ -108,25 +159,25 @@ class IsometricState extends ChangeNotifier {
     final lastPoint = points.isEmpty ? startingPoint : points.last;
     final distance = 1.0;
 
-    final point1 = Point3D(
-      lastPoint.x + distance * cos(pi / 4),
-      lastPoint.y + distance * sin(pi / 4),
-      lastPoint.z,
-    );
-    points.add(point1);
+    final point1 = Point3D(lastPoint.x + distance, lastPoint.y, lastPoint.z);
+    final point2 = Point3D(point1.x, point1.y + distance, point1.z);
+
+    points.addAll([point1, point2]);
 
     final lines = [
       IsometricLine3D(lastPoint, point1, false, distance),
+      IsometricLine3D(point1, point2, false, distance),
     ];
 
     final bend = Bend(
       distance: distance,
-      degrees: 45,
+      degrees: 90,
       lines: lines,
       type: BendType.offset,
     );
 
     bends.add(bend);
+    _saveToHistory();
     notifyListeners();
   }
 
@@ -134,11 +185,14 @@ class IsometricState extends ChangeNotifier {
     final lastPoint = points.isEmpty ? startingPoint : points.last;
     final distance = 1.0;
 
-    final point1 = Point3D(lastPoint.x, lastPoint.y + distance, lastPoint.z);
-    points.add(point1);
+    final point1 = Point3D(lastPoint.x + distance, lastPoint.y, lastPoint.z);
+    final point2 = Point3D(point1.x, point1.y + distance, point1.z);
+
+    points.addAll([point1, point2]);
 
     final lines = [
       IsometricLine3D(lastPoint, point1, false, distance),
+      IsometricLine3D(point1, point2, false, distance),
     ];
 
     final bend = Bend(
@@ -149,6 +203,7 @@ class IsometricState extends ChangeNotifier {
     );
 
     bends.add(bend);
+    _saveToHistory();
     notifyListeners();
   }
 
@@ -161,12 +216,64 @@ class IsometricState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateBendProperties(int index, Map<String, double> properties) {
+    if (index < 0 || index >= bends.length) return;
+
+    final bend = bends[index];
+    if (properties.containsKey('distance')) {
+      // Update distance logic here
+    }
+    if (properties.containsKey('inclination')) {
+      bend.inclination = properties['inclination']!;
+      _updateBendGeometry(bend);
+    }
+    _saveToHistory();
+    notifyListeners();
+  }
+
+  void clearAll() {
+    points.clear();
+    bends.clear();
+    selectedBend = null;
+    _saveToHistory();
+    notifyListeners();
+  }
+
+  bool canUndo() => _undoHistory.length > 1;
+
+  void undo() {
+    if (canUndo()) {
+      _undoHistory.removeLast();
+      final previous = _undoHistory.last;
+
+      // Restore settings
+      _pipeSize = previous['pipeSize'];
+      _angle = previous['angle'];
+      _boxOffset = previous['boxOffset'];
+      _index = previous['index'];
+
+      notifyListeners();
+    }
+  }
+
+  // Helper methods
   bool _isLineNearPoint(IsometricLine3D line, Offset point, ViewAxis axis) {
     const double threshold = 10.0;
     final start = _projectPoint(line.start, axis);
     final end = _projectPoint(line.end, axis);
-
     return _distanceToLineSegment(point, start, end) < threshold;
+  }
+
+  Offset _projectPoint(Point3D point, ViewAxis axis) {
+    const double scale = 50.0;
+    switch (axis) {
+      case ViewAxis.front:
+        return Offset(point.y * scale, -point.z * scale);
+      case ViewAxis.side:
+        return Offset(point.x * scale, -point.z * scale);
+      case ViewAxis.top:
+        return Offset(point.x * scale, point.y * scale);
+    }
   }
 
   double _distanceToLineSegment(Offset p, Offset start, Offset end) {
@@ -182,18 +289,6 @@ class IsometricState extends ChangeNotifier {
     if (t > 1) return (p - end).distance;
 
     return (p - (start + b * t)).distance;
-  }
-
-  Offset _projectPoint(Point3D point, ViewAxis axis) {
-    const double scale = 50.0;
-    switch (axis) {
-      case ViewAxis.front:
-        return Offset(point.y * scale, -point.z * scale);
-      case ViewAxis.side:
-        return Offset(point.x * scale, -point.z * scale);
-      case ViewAxis.top:
-        return Offset(point.x * scale, point.y * scale);
-    }
   }
 
   void rotateBend(double newInclination) {
@@ -247,6 +342,7 @@ class IsometricState extends ChangeNotifier {
     bend.lines[1] = IsometricLine3D(point1, point2, false, distance);
     bend.lines[2] = IsometricLine3D(point2, point3, false, distance);
 
+    // Update points in the points list
     final startIndex = points.indexOf(startPoint);
     if (startIndex != -1 && startIndex + 3 <= points.length) {
       points[startIndex + 1] = point1;
@@ -295,99 +391,5 @@ class IsometricState extends ChangeNotifier {
     if (startIndex != -1 && startIndex + 1 < points.length) {
       points[startIndex + 1] = endPoint;
     }
-  }
-
-  void updateBendProperties(int index, Map<String, double> properties) {
-    if (index < 0 || index >= bends.length) return;
-
-    final bend = bends[index];
-    if (properties.containsKey('distance')) {
-      // Update distance logic
-    }
-    if (properties.containsKey('inclination')) {
-      bend.inclination = properties['inclination']!;
-      _updateBendGeometry(bend);
-    }
-    notifyListeners();
-  }
-
-  void clearAll() {
-    points.clear();
-    bends.clear();
-    selectedBend = null;
-    notifyListeners();
-  }
-
-  Map<String, dynamic> getCurrentState() {
-    return {
-      'points': points
-          .map((p) => {
-                'x': p.x,
-                'y': p.y,
-                'z': p.z,
-                'angle': p.angle,
-              })
-          .toList(),
-      'bends': bends
-          .map((b) => {
-                'distance': b.distance,
-                'degrees': b.degrees,
-                'inclination': b.inclination,
-                'type': b.type.toString(),
-                'lines': b.lines
-                    .map((l) => {
-                          'start': {
-                            'x': l.start.x,
-                            'y': l.start.y,
-                            'z': l.start.z
-                          },
-                          'end': {'x': l.end.x, 'y': l.end.y, 'z': l.end.z},
-                          'length': l.length,
-                        })
-                    .toList(),
-              })
-          .toList(),
-    };
-  }
-
-  void restoreState(Map<String, dynamic> state) {
-    points.clear();
-    bends.clear();
-
-    final pointsList = state['points'] as List;
-    for (var p in pointsList) {
-      points.add(Point3D(
-        p['x'] as double,
-        p['y'] as double,
-        p['z'] as double,
-        p['angle'] as double?,
-      ));
-    }
-
-    final bendsList = state['bends'] as List;
-    for (var b in bendsList) {
-      final linesList = b['lines'] as List;
-      final lines = linesList.map((l) {
-        final start = l['start'];
-        final end = l['end'];
-        return IsometricLine3D(
-          Point3D(
-              start['x'] as double, start['y'] as double, start['z'] as double),
-          Point3D(end['x'] as double, end['y'] as double, end['z'] as double),
-          false,
-          l['length'] as double?,
-        );
-      }).toList();
-
-      bends.add(Bend(
-        distance: b['distance'] as double,
-        degrees: b['degrees'] as double,
-        inclination: b['inclination'] as double,
-        lines: lines,
-        type: BendType.values.firstWhere((e) => e.toString() == b['type']),
-      ));
-    }
-
-    notifyListeners();
   }
 }

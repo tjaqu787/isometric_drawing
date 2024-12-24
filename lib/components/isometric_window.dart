@@ -3,7 +3,7 @@ import './isometric_state.dart';
 import './single_axis_painter.dart';
 
 class IsometricWindow extends StatelessWidget {
-  final IsometricState state;
+  final AppState state;
   final ViewAxis axis;
 
   const IsometricWindow({

@@ -3,7 +3,7 @@ import 'dart:math';
 import './isometric_state.dart';
 
 class SingleAxisPainter extends CustomPainter {
-  final IsometricState state;
+  final AppState state;
   final ViewAxis axis;
   static const double scale = 50.0;
   static const double hitTestThreshold = 10.0;
