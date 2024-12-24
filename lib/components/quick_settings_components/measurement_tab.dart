@@ -142,26 +142,19 @@ class _BendCardState extends State<_BendCard> {
                 ],
               ),
               const SizedBox(height: 8),
-              if (widget.bend.type == BendType.kick ||
-                  widget.bend.type == BendType.degree90) ...[
-                Row(
-                  children: [
-                    Expanded(
-                      child: _AngleDropdown(
-                        value: widget.bend.angle,
-                        onChanged: (value) => _updateBendProperty(
-                          context,
-                          'angle',
-                          value,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-              ],
               Row(
                 children: [
+                  Expanded(
+                    child: _AngleDropdown(
+                      value: widget.bend.angle,
+                      onChanged: (value) => _updateBendProperty(
+                        context,
+                        'angle',
+                        value,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: _MeasurementPointDropdown(
                       value: widget.bend.measurementPoint,
@@ -273,10 +266,10 @@ class _AngleDropdown extends StatelessWidget {
         border: OutlineInputBorder(),
       ),
       value: value,
-      items: [0.0, 45.0, 90.0, 135.0, 180.0].map((angle) {
+      items: [10.0, 22.5, 30.0, 45.0, 60.0].map((angle) {
         return DropdownMenuItem<double>(
           value: angle,
-          child: Text('${angle.toStringAsFixed(0)}°'),
+          child: Text('${angle.toStringAsFixed(1)}°'),
         );
       }).toList(),
       onChanged: (newValue) {

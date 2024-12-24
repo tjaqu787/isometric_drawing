@@ -84,14 +84,14 @@ class AppState extends ChangeNotifier {
 
   // Settings state
   String _pipeSize = '1/2"';
-  String _angle = '45';
+  double _angle = 22.5;
   double _boxOffset = 0.5;
   String _index = '1';
   final List<Map<String, dynamic>> _undoHistory = [];
 
   // Settings getters
   String get pipeSize => _pipeSize;
-  String get angle => _angle;
+  double get angle => _angle;
   double get boxOffset => _boxOffset;
   String get index => _index;
 
@@ -104,7 +104,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateAngle(String newAngle) {
+  void updateAngle(double newAngle) {
     _angle = newAngle;
     _saveToHistory();
     _updateGeometryWithSettings();
