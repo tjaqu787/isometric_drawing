@@ -108,6 +108,7 @@ class AppState extends ChangeNotifier {
   double get defaultOffsetAngle => _offsetAngle;
   double get defaultOffsetSize => _offsetSize;
   num get index => _index;
+  bool canUndo() => _undoHistory.length > 1;
 
   // Settings update methods
   void updatePipeSize(String size) {
@@ -323,34 +324,6 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateBendProperties(int index, Map<String, dynamic> properties) {
-    if (index < 0 || index >= bends.length) return;
-
-    final bend = bends[index];
-    if (properties.containsKey('distance')) {
-      // Update distance logic here
-    }
-    if (properties.containsKey('inclination')) {
-      bend.inclination = properties['inclination']!;
-    }
-    if (properties.containsKey('x')) {
-      bend.x = properties['x']!;
-    }
-    if (properties.containsKey('y')) {
-      bend.y = properties['y']!;
-    }
-    if (properties.containsKey('angle')) {
-      bend.angle = properties['angle']!;
-    }
-    if (properties.containsKey('measurementPoint')) {
-      bend.measurementPoint = properties['measurementPoint']!;
-    }
-
-    _updateBendGeometry(bend);
-    _saveToHistory();
-    notifyListeners();
-  }
-
   void selectBendNearPoint(Offset point, ViewAxis axis) {
     selectedBend = bends.cast<Bend?>().firstWhere(
           (bend) =>
@@ -367,8 +340,6 @@ class AppState extends ChangeNotifier {
     _saveToHistory();
     notifyListeners();
   }
-
-  bool canUndo() => _undoHistory.length > 1;
 
   bool _isLineNearPoint(IsometricLine3D line, Offset point, ViewAxis axis) {
     const double threshold = 10.0;
@@ -506,6 +477,218 @@ class AppState extends ChangeNotifier {
     final startIndex = points.indexOf(startPoint);
     if (startIndex != -1 && startIndex + 1 < points.length) {
       points[startIndex + 1] = endPoint;
+    }
+  }
+
+// Add these methods to the AppState class
+
+  void updateBendProperties(int index, Map<String, dynamic> properties) {
+    if (index < 0 || index >= bends.length) return;
+
+    final bend = bends[index];
+    bool needsUpdate = false;
+
+    if (properties.containsKey('inclination')) {
+      bend.inclination = properties['inclination']!;
+      needsUpdate = true;
+    }
+    if (properties.containsKey('x')) {
+      bend.x = properties['x']!;
+      needsUpdate = true;
+    }
+    if (properties.containsKey('y')) {
+      bend.y = properties['y']!;
+      needsUpdate = true;
+    }
+    if (properties.containsKey('angle')) {
+      bend.angle = properties['angle']!;
+      needsUpdate = true;
+    }
+    if (properties.containsKey('measurementPoint')) {
+      bend.measurementPoint = properties['measurementPoint']!;
+      needsUpdate = true;
+    }
+
+    if (needsUpdate) {
+      // Update this bend and all subsequent bends
+      _updateBendsFromIndex(index);
+    }
+
+    _saveToHistory();
+    notifyListeners();
+  }
+
+  void _updateBendsFromIndex(int startIndex) {
+    if (startIndex >= bends.length) return;
+
+    Point3D currentPoint;
+    if (startIndex == 0) {
+      currentPoint = startingPoint;
+    } else {
+      // Get the end point of the previous bend
+      final prevBend = bends[startIndex - 1];
+      currentPoint = prevBend.lines.last.end;
+    }
+
+    // Update each bend from the starting index
+    for (int i = startIndex; i < bends.length; i++) {
+      final bend = bends[i];
+      _updateBendGeometryWithStartPoint(bend, currentPoint);
+      // The end point of this bend becomes the start point for the next bend
+      currentPoint = bend.lines.last.end;
+    }
+  }
+
+  void _updateBendGeometryWithStartPoint(Bend bend, Point3D startPoint) {
+    switch (bend.type) {
+      case BendType.boxOffset:
+        _updateBoxOffsetGeometryWithStartPoint(bend, startPoint);
+        break;
+      case BendType.offset:
+        _updateOffsetGeometryWithStartPoint(bend, startPoint);
+        break;
+      case BendType.degree90:
+        _update90DegreeGeometryWithStartPoint(bend, startPoint);
+        break;
+      case BendType.kick:
+        _updateKickGeometryWithStartPoint(bend, startPoint);
+        break;
+    }
+  }
+
+  void _updateBoxOffsetGeometryWithStartPoint(Bend bend, Point3D startPoint) {
+    final distance = bend.distance;
+    final inclinationRad = bend.inclination * pi / 180;
+
+    // First segment - straight to the corner point
+    final cornerPoint = Point3D(
+      startPoint.x + distance,
+      startPoint.y,
+      startPoint.z,
+    );
+
+    // Second segment - rotates around the corner point
+    final point2 = Point3D(
+      cornerPoint.x,
+      cornerPoint.y + distance * cos(inclinationRad),
+      cornerPoint.z + distance * sin(inclinationRad),
+    );
+
+    // Third segment - maintains the same direction as original
+    final point3 = Point3D(
+      point2.x + distance,
+      point2.y,
+      point2.z,
+    );
+
+    // Update the lines with new points
+    bend.lines.clear();
+    bend.lines.addAll([
+      IsometricLine3D(startPoint, cornerPoint, false, distance),
+      IsometricLine3D(cornerPoint, point2, false, distance),
+      IsometricLine3D(point2, point3, false, distance),
+    ]);
+
+    // Update points in the points list
+    _updatePointsForBend(bend, [cornerPoint, point2, point3]);
+  }
+
+  void _updateOffsetGeometryWithStartPoint(Bend bend, Point3D startPoint) {
+    final distance = bend.distance;
+    final inclinationRad = bend.inclination * pi / 180;
+
+    // Corner point (pivot point)
+    final cornerPoint = Point3D(
+      startPoint.x + distance,
+      startPoint.y,
+      startPoint.z,
+    );
+
+    // End point rotated around corner
+    final endPoint = Point3D(
+      cornerPoint.x,
+      cornerPoint.y + distance * cos(inclinationRad),
+      cornerPoint.z + distance * sin(inclinationRad),
+    );
+
+    // Update the lines
+    bend.lines.clear();
+    bend.lines.addAll([
+      IsometricLine3D(startPoint, cornerPoint, false, distance),
+      IsometricLine3D(cornerPoint, endPoint, false, distance),
+    ]);
+
+    // Update points in the points list
+    _updatePointsForBend(bend, [cornerPoint, endPoint]);
+  }
+
+  void _update90DegreeGeometryWithStartPoint(Bend bend, Point3D startPoint) {
+    final distance = bend.distance;
+    final inclinationRad = bend.inclination * pi / 180;
+
+    // Corner point (pivot point)
+    final cornerPoint = Point3D(
+      startPoint.x + distance,
+      startPoint.y,
+      startPoint.z,
+    );
+
+    // End point - always 90 degrees from the start, but can rotate in YZ plane
+    final endPoint = Point3D(
+      cornerPoint.x,
+      cornerPoint.y + distance * cos(inclinationRad),
+      cornerPoint.z + distance * sin(inclinationRad),
+    );
+
+    // Update the lines
+    bend.lines.clear();
+    bend.lines.addAll([
+      IsometricLine3D(startPoint, cornerPoint, false, distance),
+      IsometricLine3D(cornerPoint, endPoint, false, distance),
+    ]);
+
+    // Update points in the points list
+    _updatePointsForBend(bend, [cornerPoint, endPoint]);
+  }
+
+  void _updateKickGeometryWithStartPoint(Bend bend, Point3D startPoint) {
+    final distance = bend.distance;
+    final inclinationRad = bend.inclination * pi / 180;
+
+    // Corner point (pivot point)
+    final cornerPoint = Point3D(
+      startPoint.x + distance,
+      startPoint.y,
+      startPoint.z,
+    );
+
+    // End point - maintains kick angle but can rotate in YZ plane
+    final endPoint = Point3D(
+      cornerPoint.x + distance * cos(22.5 * pi / 180),
+      cornerPoint.y + distance * cos(inclinationRad),
+      cornerPoint.z + distance * sin(inclinationRad),
+    );
+
+    // Update the lines
+    bend.lines.clear();
+    bend.lines.addAll([
+      IsometricLine3D(startPoint, cornerPoint, false, distance),
+      IsometricLine3D(cornerPoint, endPoint, false, distance),
+    ]);
+
+    // Update points in the points list
+    _updatePointsForBend(bend, [cornerPoint, endPoint]);
+  }
+
+  void _updatePointsForBend(Bend bend, List<Point3D> newPoints) {
+    // Find the start point index
+    final startPointIndex = points.indexOf(bend.lines.first.start);
+    if (startPointIndex != -1) {
+      // Remove old points for this bend
+      points.removeRange(
+          startPointIndex + 1, startPointIndex + 1 + newPoints.length);
+      // Insert new points
+      points.insertAll(startPointIndex + 1, newPoints);
     }
   }
 }
