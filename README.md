@@ -1,16 +1,15 @@
-# drawing_interface
+# Isometric Bend Designer
 
-A new Flutter project.
+An isometric drawing tool designed for creating bend patterns for an automatic bender.
 
-## Getting Started
+## Features
+- **Isometric Drawing Interface**: Easily design bends in a 3D-like view.
+- **Bend Calculation**: Automatically calculates angles and dimensions for accurate bends.
+- **Export Options**: Export designs to formats suitable for the automatic bender.
 
-This project is a starting point for a Flutter application.
+![Preview of the Isometric Bend Designer](assets/design-preview.png)
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Setup
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/tjaqu787/isometric-bend-designer.git
