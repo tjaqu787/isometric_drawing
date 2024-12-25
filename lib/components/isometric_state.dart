@@ -1,5 +1,4 @@
 // This is a pretty big state file, have fun maintaining this
-// Point 3d and lin
 import 'package:flutter/material.dart';
 import 'dart:math';
 
@@ -196,9 +195,12 @@ class AppState extends ChangeNotifier {
 
   void addBoxOffset() {
     final lastPoint = points.isEmpty ? startingPoint : points.last;
-    final distance = 1.0;
+    final distance = _boxOffset; // Using the default box offset
+    final angleRad = _boxOffsetAngle * pi / 180; // Convert angle to radians
 
-    final point1 = Point3D(lastPoint.x + distance, lastPoint.y, lastPoint.z);
+    // Calculate points using the angle
+    final point1 = Point3D(lastPoint.x + distance * cos(angleRad),
+        lastPoint.y + distance * sin(angleRad), lastPoint.z);
     final point2 = Point3D(point1.x, point1.y + distance, point1.z);
     final point3 = Point3D(point2.x + distance, point2.y, point2.z);
 
@@ -212,10 +214,10 @@ class AppState extends ChangeNotifier {
 
     final bend = Bend(
       distance: distance,
-      degrees: 22.5,
+      degrees: _boxOffsetAngle, // Using the default angle
       x: 0,
       y: 0,
-      angle: 22.5,
+      angle: _boxOffsetAngle,
       measurementPoint: 'start',
       lines: lines,
       type: BendType.boxOffset,
@@ -228,9 +230,12 @@ class AppState extends ChangeNotifier {
 
   void addOffset() {
     final lastPoint = points.isEmpty ? startingPoint : points.last;
-    final distance = 1.5;
+    final distance = _offsetSize; // Using the default offset size
+    final angleRad = _offsetAngle * pi / 180; // Convert angle to radians
 
-    final point1 = Point3D(lastPoint.x + distance, lastPoint.y, lastPoint.z);
+    // Calculate points using the angle
+    final point1 = Point3D(lastPoint.x + distance * cos(angleRad),
+        lastPoint.y + distance * sin(angleRad), lastPoint.z);
     final point2 = Point3D(point1.x, point1.y + distance, point1.z);
     final point3 = Point3D(point2.x + distance, point2.y, point2.z);
 
@@ -244,10 +249,10 @@ class AppState extends ChangeNotifier {
 
     final bend = Bend(
       distance: distance,
-      degrees: 22.5,
+      degrees: _offsetAngle, // Using the default angle
       x: 0,
       y: 0,
-      angle: 22.5,
+      angle: _offsetAngle,
       measurementPoint: 'start',
       lines: lines,
       type: BendType.offset,
