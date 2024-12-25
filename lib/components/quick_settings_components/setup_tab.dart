@@ -17,48 +17,98 @@ class SettingsTab extends StatelessWidget {
       children: [
         const QuickSettingsButtonBar(),
         const Divider(),
-        Expanded(
+
+        // Top Row with Conduit Size and Quantity
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _LeftColumn(appState: appState),
+                child: _SettingSection(
+                  title: 'Conduit Size:',
+                  child: _buildPipeSizeDropdown(appState),
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _RightColumn(appState: appState),
+                child: _SettingSection(
+                  title: 'Quantity:',
+                  child: _buildQuantityDropdown(appState),
+                ),
               ),
             ],
           ),
         ),
+
+        // First Card - Box Offset and Angle
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _SettingSection(
+                      title: 'Box Offset:',
+                      child: _BoxOffsetInput(
+                        value: appState.defaultBoxOffset,
+                        onChanged: appState.updateDefaultBoxOffset,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _SettingSection(
+                      title: 'Angle:',
+                      child: _buildBoxOffsetAngleDropdown(appState),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // Second Card - Default Settings
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _SettingSection(
+                      title: 'Default Offset:',
+                      child: _BoxOffsetInput(
+                        value: appState
+                            .defaultOffsetSize, // Changed to use defaultOffset
+                        onChanged: appState
+                            .updateDefaultOffsetSize, // New method needed
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _SettingSection(
+                      title: 'Default Angle:',
+                      child: _buildDefaultAngleDropdown(appState),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        const Spacer(), // Push bottom action bar to the bottom
         const _BottomActionBar(),
       ],
     );
   }
-}
 
-class _LeftColumn extends StatelessWidget {
-  final AppState appState;
-
-  const _LeftColumn({required this.appState});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _SettingSection(
-          title: 'Conduit Size:',
-          child: _buildPipeSizeDropdown(),
-        ),
-        _SettingSection(
-          title: 'Quantity:',
-          child: _buildQuantityDropdown(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPipeSizeDropdown() {
+  Widget _buildPipeSizeDropdown(AppState appState) {
     return DropdownButton<String>(
       value: appState.pipeSize,
       isExpanded: true,
@@ -69,7 +119,7 @@ class _LeftColumn extends StatelessWidget {
     );
   }
 
-  Widget _buildQuantityDropdown() {
+  Widget _buildQuantityDropdown(AppState appState) {
     return DropdownButton<num>(
       value: appState.index,
       isExpanded: true,
@@ -80,35 +130,10 @@ class _LeftColumn extends StatelessWidget {
       onChanged: (value) => appState.updateIndex(value!),
     );
   }
-}
 
-class _RightColumn extends StatelessWidget {
-  final AppState appState;
-
-  const _RightColumn({required this.appState});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _SettingSection(
-          title: 'Angle:',
-          child: _buildAngleDropdown(),
-        ),
-        _SettingSection(
-          title: 'Box Offset:',
-          child: _BoxOffsetInput(
-            value: appState.boxOffset,
-            onChanged: appState.updateBoxOffset,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAngleDropdown() {
+  Widget _buildBoxOffsetAngleDropdown(AppState appState) {
     return DropdownButton<double>(
-      value: appState.angle,
+      value: appState.defaultBoxAngle,
       isExpanded: true,
       items: [10, 22.5, 30, 45, 60].map((angle) {
         return DropdownMenuItem(
@@ -116,7 +141,21 @@ class _RightColumn extends StatelessWidget {
           child: Text('${angle.toStringAsFixed(1)}°'),
         );
       }).toList(),
-      onChanged: (value) => appState.updateAngle(value!),
+      onChanged: (value) => appState.updateDefaultBoxAngle(value!),
+    );
+  }
+
+  Widget _buildDefaultAngleDropdown(AppState appState) {
+    return DropdownButton<double>(
+      value: appState.defaultOffsetAngle,
+      isExpanded: true,
+      items: [10, 22.5, 30, 45, 60].map((angle) {
+        return DropdownMenuItem(
+          value: angle.toDouble(),
+          child: Text('${angle.toStringAsFixed(1)}°'),
+        );
+      }).toList(),
+      onChanged: (value) => appState.updateDefaultOffsetAngle(value!),
     );
   }
 }
@@ -160,25 +199,22 @@ class _SettingSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 2.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
           ),
-          const SizedBox(height: 2),
-          SizedBox(
-            width: double.infinity,
-            child: child,
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 2),
+        SizedBox(
+          width: double.infinity,
+          child: child,
+        ),
+      ],
     );
   }
 }
@@ -209,10 +245,8 @@ class _BottomActionBar extends StatelessWidget {
     final appState = context.read<AppState>();
     debugPrint('Sending data...');
     debugPrint('Pipe Size: ${appState.pipeSize}');
-    debugPrint('Bend Angle: ${appState.angle}°');
     debugPrint('Quantity: ${appState.index}');
 
-    // Print all bends
     debugPrint('\nBends:');
     for (var i = 0; i < appState.bends.length; i++) {
       final bend = appState.bends[i];

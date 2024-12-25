@@ -57,7 +57,7 @@ class IsometricLine3D {
   }
 }
 
-// meant to be used internally and externally
+// Meant to be used internally and externally
 // internally we use this primarily for state
 // Externally we are going to change this type a bit
 //  and use it as an API
@@ -95,36 +95,60 @@ class AppState extends ChangeNotifier {
 
   // Settings state
   String _pipeSize = '1/2"';
-  double _angle = 22.5;
   double _boxOffset = 0.5;
+  double _boxOffsetAngle = 10.0;
+  double _offsetAngle = 30.0;
+  double _offsetSize = 6.0;
   num _index = 1;
   final List<Map<String, dynamic>> _undoHistory = [];
 
   // Settings getters
   String get pipeSize => _pipeSize;
-  double get angle => _angle;
-  double get boxOffset => _boxOffset;
+  double get defaultBoxAngle => _boxOffsetAngle;
+  double get defaultBoxOffset => _offsetSize;
+  double get defaultOffsetAngle => _offsetAngle;
+  double get defaultOffsetSize => _offsetSize;
   num get index => _index;
 
-  // Settings methods
+  // Settings update methods
   void updatePipeSize(String size) {
     _pipeSize = size;
     _saveToHistory();
     _updateGeometryWithSettings();
-
-    notifyListeners();
-  }
-
-  void updateAngle(double newAngle) {
-    _angle = newAngle;
-    _saveToHistory();
-    _updateGeometryWithSettings();
-
     notifyListeners();
   }
 
   void updateBoxOffset(double offset) {
     _boxOffset = offset;
+    _saveToHistory();
+    _updateGeometryWithSettings();
+    notifyListeners();
+  }
+
+  // New methods for default values
+  void updateDefaultBoxAngle(double angle) {
+    _boxOffsetAngle = angle;
+    _saveToHistory();
+    _updateGeometryWithSettings();
+    notifyListeners();
+  }
+
+  void updateDefaultBoxOffset(double offset) {
+    _offsetSize = offset;
+    _saveToHistory();
+    _updateGeometryWithSettings();
+    notifyListeners();
+  }
+
+  void updateDefaultOffsetAngle(double angle) {
+    _offsetAngle = angle;
+    _saveToHistory();
+    _updateGeometryWithSettings();
+    notifyListeners();
+  }
+
+  void updateDefaultOffsetSize(double size) {
+    _offsetSize = size;
     _saveToHistory();
     _updateGeometryWithSettings();
     notifyListeners();
@@ -147,10 +171,27 @@ class AppState extends ChangeNotifier {
   void _saveToHistory() {
     _undoHistory.add({
       'pipeSize': _pipeSize,
-      'angle': _angle,
       'boxOffset': _boxOffset,
+      'boxAngle': _boxOffsetAngle,
+      'offsetAngle': _offsetAngle,
+      'offsetSize': _offsetSize,
       'index': _index,
     });
+  }
+
+  // Add method to restore from history
+  void undo() {
+    if (_undoHistory.isNotEmpty) {
+      final previousState = _undoHistory.removeLast();
+      _pipeSize = previousState['pipeSize'];
+      _boxOffset = previousState['boxOffset'];
+      _boxOffsetAngle = previousState['boxAngle'];
+      _offsetAngle = previousState['offsetAngle'];
+      _offsetSize = previousState['offsetSize'];
+      _index = previousState['index'];
+      _updateGeometryWithSettings();
+      notifyListeners();
+    }
   }
 
   void addBoxOffset() {
@@ -323,22 +364,6 @@ class AppState extends ChangeNotifier {
   }
 
   bool canUndo() => _undoHistory.length > 1;
-
-  void undo() {
-    if (canUndo()) {
-      _undoHistory.removeLast();
-      final previous = _undoHistory.last;
-
-      // Restore settings
-      _pipeSize = previous['pipeSize'];
-      _angle = previous['angle'];
-      _boxOffset = previous['boxOffset'];
-      _index = previous['index'];
-
-      _updateGeometryWithSettings();
-      notifyListeners();
-    }
-  }
 
   bool _isLineNearPoint(IsometricLine3D line, Offset point, ViewAxis axis) {
     const double threshold = 10.0;
