@@ -1,7 +1,7 @@
 // In isometric_view.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../components/isometric_state.dart';
+import '../components/data_and_state/isometric_state.dart';
 import '../components/isometric_components/isometric_window.dart';
 import '../components/quick_settings_components/quick_settings_main.dart';
 

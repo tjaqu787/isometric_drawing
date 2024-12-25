@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../isometric_state.dart';
+import '../data_and_state/isometric_state.dart';
 import 'package:provider/provider.dart';
 
 class QuickSettingsButtonBar extends StatelessWidget {

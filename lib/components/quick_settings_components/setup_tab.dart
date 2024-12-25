@@ -1,9 +1,11 @@
 // This is the setup tab of the settings window
 
-import 'package:flutter/material.dart';
-import './quick_settings_button_bar.dart';
-import '../isometric_state.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/material.dart';
+
+import './quick_settings_button_bar.dart';
+import '../data_and_state/isometric_state.dart';
+import 'sendbutton.dart';
 
 class SettingsTab extends StatelessWidget {
   const SettingsTab({super.key});
@@ -22,8 +24,8 @@ class SettingsTab extends StatelessWidget {
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 8.0),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   child: Row(
                     children: [
                       Expanded(
@@ -32,7 +34,7 @@ class SettingsTab extends StatelessWidget {
                           child: _buildPipeSizeDropdown(appState),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: _SettingSection(
                           title: 'Quantity:',
@@ -43,19 +45,19 @@ class SettingsTab extends StatelessWidget {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(8),
                   child: Row(
                     children: [
                       Expanded(
                         child: _SettingSection(
-                          title: 'Box Offset:',
+                          title: 'Default Box Offset:',
                           child: _BoxOffsetInput(
                             value: appState.defaultBoxOffset,
                             onChanged: appState.updateDefaultBoxOffset,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: _SettingSection(
                           title: 'Angle:',
@@ -66,7 +68,7 @@ class SettingsTab extends StatelessWidget {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(8),
                   child: Row(
                     children: [
                       Expanded(
@@ -78,7 +80,7 @@ class SettingsTab extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: _SettingSection(
                           title: 'Default Angle:',
@@ -92,7 +94,9 @@ class SettingsTab extends StatelessWidget {
             ),
           ),
         ),
-        const _BottomActionBar(),
+        BottomActionBar(
+          state: appState,
+        ),
       ],
     );
   }
@@ -205,41 +209,5 @@ class _SettingSection extends StatelessWidget {
         ),
       ],
     );
-  }
-}
-
-class _BottomActionBar extends StatelessWidget {
-  const _BottomActionBar();
-
-  @override
-  Widget build(BuildContext context) {
-    final appState = context.watch<AppState>();
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        IconButton(
-          onPressed: appState.canUndo() ? () => appState.undo() : null,
-          icon: const Icon(Icons.undo),
-        ),
-        ElevatedButton(
-          onPressed: () => _handleSend(context),
-          child: const Text('Send'),
-        ),
-      ],
-    );
-  }
-
-  void _handleSend(BuildContext context) {
-    final appState = context.read<AppState>();
-    debugPrint('Sending data...');
-    debugPrint('Pipe Size: ${appState.pipeSize}');
-    debugPrint('Quantity: ${appState.index}');
-
-    debugPrint('\nBends:');
-    for (var i = 0; i < appState.bends.length; i++) {
-      final bend = appState.bends[i];
-      debugPrint('Bend $i: $bend');
-    }
   }
 }

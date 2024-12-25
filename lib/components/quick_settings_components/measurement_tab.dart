@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import './quick_settings_button_bar.dart';
-import '../isometric_state.dart';
+import '../data_and_state/isometric_state.dart';
 import 'package:provider/provider.dart';
 
 class MeasurementsTab extends StatelessWidget {
