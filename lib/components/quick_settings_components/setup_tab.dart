@@ -17,92 +17,81 @@ class SettingsTab extends StatelessWidget {
       children: [
         const QuickSettingsButtonBar(),
         const Divider(),
-
-        // Top Row with Conduit Size and Quantity
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: _SettingSection(
-                  title: 'Conduit Size:',
-                  child: _buildPipeSizeDropdown(appState),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _SettingSection(
-                  title: 'Quantity:',
-                  child: _buildQuantityDropdown(appState),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // First Card - Box Offset and Angle
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _SettingSection(
-                      title: 'Box Offset:',
-                      child: _BoxOffsetInput(
-                        value: appState.defaultBoxOffset,
-                        onChanged: appState.updateDefaultBoxOffset,
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _SettingSection(
+                          title: 'Conduit Size:',
+                          child: _buildPipeSizeDropdown(appState),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _SettingSection(
+                          title: 'Quantity:',
+                          child: _buildQuantityDropdown(appState),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _SettingSection(
-                      title: 'Angle:',
-                      child: _buildBoxOffsetAngleDropdown(appState),
-                    ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _SettingSection(
+                          title: 'Box Offset:',
+                          child: _BoxOffsetInput(
+                            value: appState.defaultBoxOffset,
+                            onChanged: appState.updateDefaultBoxOffset,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _SettingSection(
+                          title: 'Angle:',
+                          child: _buildBoxOffsetAngleDropdown(appState),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _SettingSection(
+                          title: 'Default Offset:',
+                          child: _BoxOffsetInput(
+                            value: appState.defaultOffsetSize,
+                            onChanged: appState.updateDefaultOffsetSize,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _SettingSection(
+                          title: 'Default Angle:',
+                          child: _buildDefaultAngleDropdown(appState),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-
-        // Second Card - Default Settings
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _SettingSection(
-                      title: 'Default Offset:',
-                      child: _BoxOffsetInput(
-                        value: appState
-                            .defaultOffsetSize, // Changed to use defaultOffset
-                        onChanged: appState
-                            .updateDefaultOffsetSize, // New method needed
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _SettingSection(
-                      title: 'Default Angle:',
-                      child: _buildDefaultAngleDropdown(appState),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-
-        const Spacer(), // Push bottom action bar to the bottom
         const _BottomActionBar(),
       ],
     );

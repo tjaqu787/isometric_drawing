@@ -105,7 +105,7 @@ class AppState extends ChangeNotifier {
   // Settings getters
   String get pipeSize => _pipeSize;
   double get defaultBoxAngle => _boxOffsetAngle;
-  double get defaultBoxOffset => _offsetSize;
+  double get defaultBoxOffset => _boxOffset;
   double get defaultOffsetAngle => _offsetAngle;
   double get defaultOffsetSize => _offsetSize;
   num get index => _index;
