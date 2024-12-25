@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'bend_math.dart';
+import './isometric_state.dart';
 import '../../connection/api.dart';
 
 class ValidationError {

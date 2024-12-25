@@ -197,6 +197,8 @@ class _BendCardState extends State<_BendCard> {
         return '90°';
       case BendType.kick:
         return 'Kick';
+      case BendType.simple:
+        return 'Simple';
     }
   }
 

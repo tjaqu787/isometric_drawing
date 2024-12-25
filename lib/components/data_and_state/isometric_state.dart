@@ -10,7 +10,7 @@ enum ViewAxis {
 }
 
 // helper type
-enum BendType { boxOffset, offset, degree90, kick }
+enum BendType { boxOffset, offset, degree90, kick, simple }
 
 // meant to be used internally for rendering
 class Point3D {
@@ -79,9 +79,42 @@ class Bend {
     this.y = 0,
     this.angle = 22.5,
     this.measurementPoint = 'start',
-    required this.lines,
-    required this.type,
-  });
+    List<IsometricLine3D>? lines, // Make lines optional
+    BendType? type, // Make type optional
+  })  : this.lines = lines ?? [], // Default to empty list if null
+        this.type = type ?? BendType.simple; // Default to a basic type if null
+
+  // Convert Bend instance to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'distance': distance,
+      'degrees': degrees,
+      'inclination': inclination,
+      'x': x,
+      'y': y,
+      'angle': angle,
+      'type': type.toString(),
+    };
+  }
+
+  // Create Bend instance from JSON
+  factory Bend.fromJson(Map<String, dynamic> json) {
+    return Bend(
+      distance: json['distance'] as double,
+      degrees: json['degrees'] as double,
+      inclination: json['inclination'] as double? ?? 0,
+      x: json['x'] as double? ?? 0,
+      y: json['y'] as double? ?? 0,
+      angle: json['angle'] as double? ?? 22.5,
+      measurementPoint: json['measurementPoint'] as String? ?? 'start',
+      lines: [],
+      type: BendType.values.firstWhere(
+        (e) => e.toString() == json['type'],
+        orElse: () =>
+            throw ArgumentError('Invalid BendType value: ${json['type']}'),
+      ),
+    );
+  }
 }
 
 // meant to be a container for everything
@@ -397,6 +430,9 @@ class AppState extends ChangeNotifier {
       case BendType.kick:
         _updateOffsetGeometry(bend);
         break;
+      case BendType.simple:
+        debugPrint(
+            "Bend Type simple is not defined. This app isn't ready to import states yet");
     }
   }
 
@@ -553,6 +589,9 @@ class AppState extends ChangeNotifier {
       case BendType.kick:
         _updateKickGeometryWithStartPoint(bend, startPoint);
         break;
+      case BendType.simple:
+        debugPrint(
+            "Bend Type simple is not defined. This app isn't ready to import states yet");
     }
   }
 
