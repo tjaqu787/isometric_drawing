@@ -7,7 +7,7 @@ An isometric drawing tool designed for creating bend patterns for an automatic b
 - **Bend Calculation**: Automatically calculates angles and dimensions for accurate bends.
 - **Export Options**: Export designs to formats suitable for the automatic bender.
 
-![Preview of the Isometric Bend Designer](assets/design-preview.png)
+![Preview of the Isometric Bend Designer](web/preview.png)
 
 ## Setup
 1. Clone this repository:
