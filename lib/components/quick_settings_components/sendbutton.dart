@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data_and_state/bend_math.dart';
 import '../data_and_state/validate.dart';
-import '../../connection/api.dart' as api;
 import '../data_and_state/isometric_state.dart';
 
 class BottomActionBar extends StatelessWidget {
@@ -64,10 +63,12 @@ class BottomActionBar extends StatelessWidget {
       if (errors.isEmpty) {
         // Map to API Bend type and prepare data for API
         final apiBends = bends
-            .map((bend) => api.Bend(
+            .map((bend) => Bend(
                   distance: bend.distance,
                   degrees: bend.degrees,
                   inclination: bend.inclination,
+                  lines: [], // Since we don't need lines for API
+                  type: BendType.simple,
                 ))
             .toList();
 
